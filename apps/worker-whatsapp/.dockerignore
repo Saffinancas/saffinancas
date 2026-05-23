@@ -1,0 +1,11 @@
+node_modules
+.wwebjs_auth
+.wwebjs_cache
+.env
+.env.local
+.env.*.local
+*.log
+.git
+.next
+.turbo
+.DS_Store

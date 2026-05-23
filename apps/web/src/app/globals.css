@@ -1,0 +1,277 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------------
+ * Design tokens (light)
+ * --------------------------------------------------------------------- */
+@theme {
+  /* tipografia */
+  --font-sans:
+    var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif:
+    var(--font-instrument-serif), "Times New Roman", Times, serif;
+
+  /* paleta neutra (slate-ish, low contrast at edges) */
+  --color-bg: oklch(99.2% 0.003 110);
+  --color-bg-muted: oklch(97% 0.005 110);
+  --color-surface: oklch(100% 0 0);
+  --color-surface-muted: oklch(96.5% 0.005 110);
+  --color-border: oklch(91% 0.005 110);
+  --color-border-strong: oklch(85% 0.005 110);
+
+  --color-fg: oklch(20% 0.01 110);
+  --color-fg-muted: oklch(42% 0.01 110);
+  --color-fg-subtle: oklch(58% 0.005 110);
+
+  /* primary — verde profundo (#0A5C42 ~ oklch 42% .08 160) */
+  --color-primary: oklch(42% 0.08 160);
+  --color-primary-hover: oklch(38% 0.085 160);
+  --color-primary-fg: oklch(99% 0.005 160);
+  --color-primary-soft: oklch(94% 0.04 160);
+
+  /* receita / despesa — dessaturados, não vermelho de erro nem verde-neon */
+  --color-income: oklch(52% 0.09 155);
+  --color-income-soft: oklch(94% 0.045 155);
+  --color-expense: oklch(54% 0.13 28);
+  --color-expense-soft: oklch(94% 0.05 28);
+
+  --color-warning: oklch(70% 0.13 75);
+  --color-warning-soft: oklch(95% 0.05 75);
+  --color-danger: oklch(55% 0.18 25);
+  --color-danger-soft: oklch(94% 0.05 25);
+
+  /* raios e sombras */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+
+  --shadow-soft:
+    0 1px 0 oklch(0% 0 0 / 0.04),
+    0 4px 14px oklch(0% 0 0 / 0.06);
+  --shadow-pop:
+    0 8px 30px oklch(0% 0 0 / 0.12),
+    0 2px 6px oklch(0% 0 0 / 0.06);
+}
+
+/* ------------------------------------------------------------------------
+ * Design tokens (dark) — fundo neutro, não preto puro
+ * --------------------------------------------------------------------- */
+.dark {
+  --color-bg: oklch(15% 0.008 260);
+  --color-bg-muted: oklch(18% 0.008 260);
+  --color-surface: oklch(20% 0.01 260);
+  --color-surface-muted: oklch(23% 0.012 260);
+  --color-border: oklch(28% 0.01 260);
+  --color-border-strong: oklch(36% 0.012 260);
+
+  --color-fg: oklch(97% 0.005 110);
+  --color-fg-muted: oklch(75% 0.01 110);
+  --color-fg-subtle: oklch(58% 0.01 110);
+
+  --color-primary: oklch(72% 0.13 158);
+  --color-primary-hover: oklch(78% 0.13 158);
+  --color-primary-fg: oklch(15% 0.04 158);
+  --color-primary-soft: oklch(28% 0.05 158);
+
+  --color-income: oklch(75% 0.13 155);
+  --color-income-soft: oklch(28% 0.05 155);
+  --color-expense: oklch(72% 0.14 28);
+  --color-expense-soft: oklch(28% 0.06 28);
+
+  --color-warning: oklch(80% 0.13 75);
+  --color-warning-soft: oklch(30% 0.06 75);
+  --color-danger: oklch(70% 0.17 25);
+  --color-danger-soft: oklch(30% 0.07 25);
+
+  --shadow-soft:
+    0 1px 0 oklch(0% 0 0 / 0.4),
+    0 4px 14px oklch(0% 0 0 / 0.4);
+  --shadow-pop:
+    0 8px 30px oklch(0% 0 0 / 0.5),
+    0 2px 6px oklch(0% 0 0 / 0.3);
+}
+
+/* ------------------------------------------------------------------------
+ * Base
+ * --------------------------------------------------------------------- */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    border-color: var(--color-border);
+  }
+
+  html {
+    background: var(--color-bg);
+    color: var(--color-fg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-family: var(--font-sans);
+    color-scheme: light dark;
+  }
+
+  body {
+    background: var(--color-bg);
+    color: var(--color-fg);
+    min-height: 100dvh;
+  }
+
+  /* dinheiro sempre em tabular-nums */
+  .num,
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  /* hero serif para números grandes */
+  .display-serif {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  /* foco visível e elegante */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* selection sutil */
+  ::selection {
+    background: var(--color-primary-soft);
+    color: var(--color-fg);
+  }
+}
+
+/* ------------------------------------------------------------------------
+ * Utility shortcuts
+ * --------------------------------------------------------------------- */
+@layer utilities {
+  .bg-surface {
+    background: var(--color-surface);
+  }
+  .bg-surface-muted {
+    background: var(--color-surface-muted);
+  }
+  .bg-bg {
+    background: var(--color-bg);
+  }
+  .bg-bg-muted {
+    background: var(--color-bg-muted);
+  }
+  .text-fg {
+    color: var(--color-fg);
+  }
+  .text-fg-muted {
+    color: var(--color-fg-muted);
+  }
+  .text-fg-subtle {
+    color: var(--color-fg-subtle);
+  }
+  .text-primary {
+    color: var(--color-primary);
+  }
+  .bg-primary {
+    background: var(--color-primary);
+  }
+  .text-primary-fg {
+    color: var(--color-primary-fg);
+  }
+  .bg-primary-soft {
+    background: var(--color-primary-soft);
+  }
+  .text-income {
+    color: var(--color-income);
+  }
+  .text-expense {
+    color: var(--color-expense);
+  }
+  .bg-income-soft {
+    background: var(--color-income-soft);
+  }
+  .bg-expense-soft {
+    background: var(--color-expense-soft);
+  }
+  .border-default {
+    border-color: var(--color-border);
+  }
+  .border-strong {
+    border-color: var(--color-border-strong);
+  }
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  .shadow-pop {
+    box-shadow: var(--shadow-pop);
+  }
+}
+
+/* ------------------------------------------------------------------------
+ * Prose para páginas legais (privacidade, termos, LGPD)
+ * --------------------------------------------------------------------- */
+.prose-saf {
+  max-width: 65ch;
+  color: var(--color-fg);
+  line-height: 1.65;
+}
+.prose-saf h1 {
+  font-family: var(--font-serif);
+  font-size: 2.2rem;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.5rem;
+}
+.prose-saf h2 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin-top: 2.5rem;
+  margin-bottom: 0.6rem;
+}
+.prose-saf h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.4rem;
+}
+.prose-saf p {
+  margin-bottom: 1rem;
+  color: var(--color-fg-muted);
+}
+.prose-saf ul {
+  margin-bottom: 1rem;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+.prose-saf li {
+  margin-bottom: 0.3rem;
+  color: var(--color-fg-muted);
+}
+.prose-saf a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose-saf strong {
+  color: var(--color-fg);
+  font-weight: 600;
+}
+.prose-saf code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+  background: var(--color-surface-muted);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+/* ------------------------------------------------------------------------
+ * Anti-FOUC para next-themes — script já é injetado, mas garantimos que
+ * a transição de cor não pisque ao trocar tema
+ * --------------------------------------------------------------------- */
+.theme-transition,
+.theme-transition * {
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease;
+}

@@ -1,0 +1,37 @@
+# Root .dockerignore — usado quando o build context é o monorepo todo
+# (Dockerfile do worker copia arquivos relativos à raiz)
+
+# Build artifacts e cache
+node_modules
+**/node_modules
+.next
+**/.next
+.turbo
+**/dist
+**/.cache
+
+# Sessões / dados locais
+.pglite
+.wwebjs_auth
+.wwebjs_cache
+
+# Secrets
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+
+# Git e IDE
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Apps que não vão pro worker
+apps/web/.next

@@ -1,0 +1,50 @@
+# =============================================================================
+# Fly.io app config — worker WhatsApp da Saf Finanças
+#
+# Antes de `fly deploy`:
+#   1. `fly apps create saf-whatsapp --org pessoal`
+#   2. `fly volumes create wa_sessions --region gru --size 3 -a saf-whatsapp`
+#   3. `fly secrets set -a saf-whatsapp \
+#         DATABASE_URL=... REDIS_URL=... WORKER_SHARED_SECRET=... \
+#         ANTHROPIC_API_KEY=... PLATFORM_ENCRYPTION_KEY=...`
+#   4. `fly deploy -a saf-whatsapp --config apps/worker-whatsapp/fly.toml \
+#         --dockerfile apps/worker-whatsapp/Dockerfile`
+# =============================================================================
+
+app = "saf-whatsapp"
+primary_region = "gru"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  WA_SESSIONS_DIR = "/data/wwebjs_auth"
+  WA_MESSAGE_TTL_DAYS = "90"
+
+[[mounts]]
+  source = "wa_sessions"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false  # nunca dorme — whatsapp-web.js perderia sessão
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "connections"
+    soft_limit = 200
+    hard_limit = 250
+
+[[http_service.checks]]
+  interval = "30s"
+  timeout = "5s"
+  grace_period = "30s"
+  method = "get"
+  path = "/health"
+
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "1024mb"

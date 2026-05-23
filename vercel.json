@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm --filter @cofre/web build",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "framework": "nextjs",
+  "outputDirectory": "apps/web/.next",
+  "regions": ["gru1"],
+  "crons": [
+    {
+      "path": "/api/cron/nfse-schedules",
+      "schedule": "0 8 * * *"
+    }
+  ]
+}

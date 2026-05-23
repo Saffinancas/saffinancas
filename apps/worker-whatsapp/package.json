@@ -1,0 +1,33 @@
+{
+  "name": "@cofre/worker-whatsapp",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'no lint here'"
+  },
+  "dependencies": {
+    "@cofre/ai": "workspace:*",
+    "@cofre/db": "workspace:*",
+    "bullmq": "^5.34.0",
+    "drizzle-orm": "^0.36.4",
+    "express": "^4.21.2",
+    "ioredis": "^5.4.2",
+    "pino": "^9.5.0",
+    "pino-pretty": "^11.3.0",
+    "qrcode": "^1.5.4",
+    "whatsapp-web.js": "^1.26.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "@types/qrcode": "^1.5.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

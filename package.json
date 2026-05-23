@@ -1,0 +1,27 @@
+{
+  "name": "financas-familiares",
+  "private": true,
+  "version": "0.0.0",
+  "description": "SaaS de finanças familiares com captura via WhatsApp e classificação por IA",
+  "packageManager": "pnpm@11.0.9",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @cofre/web dev",
+    "build": "pnpm --filter @cofre/web build",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck",
+    "db:generate": "pnpm --filter @cofre/db run generate",
+    "db:migrate": "pnpm --filter @cofre/db run migrate",
+    "db:migrate:cloud": "pnpm --filter @cofre/db run migrate:cloud",
+    "db:studio": "pnpm --filter @cofre/db run studio",
+    "seed:admin": "pnpm --filter @cofre/web run seed:admin",
+    "worker:wa": "pnpm --filter @cofre/worker-whatsapp dev"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "prettier-plugin-tailwindcss": "^0.6.8",
+    "typescript": "^5.6.3"
+  }
+}

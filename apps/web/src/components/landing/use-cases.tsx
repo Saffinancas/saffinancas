@@ -1,0 +1,58 @@
+import { Heart, Baby, Home, Users } from "lucide-react";
+
+const cases = [
+  {
+    icon: Heart,
+    title: "Casal jovem",
+    desc: "Dois pagadores, contas dividas no Pix. A briga sobre 'pra onde foi o dinheiro' acaba antes de começar.",
+  },
+  {
+    icon: Baby,
+    title: "Família com filhos",
+    desc: "Mercado, escola, médico, lazer. Cada categoria com teto, cada mês com um plano — e ninguém precisa abrir app.",
+  },
+  {
+    icon: Home,
+    title: "Pais e filhos adultos",
+    desc: "Três gerações morando junto. A IA aprende quem paga o quê e organiza por pessoa, mantendo o pote único.",
+  },
+  {
+    icon: Users,
+    title: "Irmãos dividindo casa",
+    desc: "Aluguel, contas, mercado. Quem ainda não pagou aparece no checklist mensal — sem cobrança chata, só transparência.",
+  },
+];
+
+export function UseCases() {
+  return (
+    <section className="border-t border-[var(--color-border)] py-20 sm:py-28">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="max-w-2xl">
+          <p className="text-xs font-medium uppercase tracking-wider text-[var(--color-primary)]">
+            Casos de uso
+          </p>
+          <h2 className="mt-2 text-balance text-3xl tracking-tight sm:text-4xl">
+            Funciona pra todo arranjo de família
+          </h2>
+        </div>
+
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {cases.map((c) => (
+            <div
+              key={c.title}
+              className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-soft"
+            >
+              <span className="grid h-10 w-10 place-items-center rounded-[var(--radius)] bg-[var(--color-primary-soft)] text-[var(--color-primary)]">
+                <c.icon className="h-5 w-5" />
+              </span>
+              <h3 className="mt-4 text-base font-semibold tracking-tight">{c.title}</h3>
+              <p className="mt-1.5 text-[14px] leading-relaxed text-[var(--color-fg-muted)]">
+                {c.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
