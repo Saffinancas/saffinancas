@@ -1,6 +1,8 @@
 import path from "node:path";
 import { mkdir } from "node:fs/promises";
-import { Client, LocalAuth, type Message } from "whatsapp-web.js";
+import wweb from "whatsapp-web.js";
+import type { Client as WAClient, Chat, Message } from "whatsapp-web.js";
+const { Client, LocalAuth } = wweb;
 import QRCode from "qrcode";
 import { env } from "../env.js";
 import { log } from "../log.js";
@@ -33,7 +35,7 @@ export type SessionState = {
 
 export class WaSession {
   readonly familyId: string;
-  private client: Client | null = null;
+  private client: WAClient | null = null;
   state: SessionState;
 
   constructor(familyId: string) {
@@ -69,7 +71,7 @@ export class WaSession {
       },
     });
 
-    this.client.on("qr", async (qr) => {
+    this.client.on("qr", async (qr: string) => {
       const dataUrl = await QRCode.toDataURL(qr, { width: 256, margin: 1 });
       this.state.qrPayload = qr;
       this.state.qrDataUrl = dataUrl;
@@ -94,20 +96,20 @@ export class WaSession {
       log.info({ familyId: this.familyId }, "Autenticado (sessão restaurada)");
     });
 
-    this.client.on("auth_failure", async (msg) => {
+    this.client.on("auth_failure", async (msg: string) => {
       log.warn({ familyId: this.familyId, msg }, "Falha de autenticação");
       this.state.status = "auth_failure";
       await this.persist();
     });
 
-    this.client.on("disconnected", async (reason) => {
+    this.client.on("disconnected", async (reason: string) => {
       log.warn({ familyId: this.familyId, reason }, "Desconectado");
       this.state.status = "disconnected";
       this.state.pairedPhone = null;
       await this.persist();
     });
 
-    this.client.on("message", (msg) => {
+    this.client.on("message", (msg: Message) => {
       this.handleIncomingMessage(msg).catch((err) =>
         log.error({ err, familyId: this.familyId }, "Erro ao tratar mensagem"),
       );
@@ -149,8 +151,8 @@ export class WaSession {
     if (!this.client) return [];
     const chats = await this.client.getChats();
     return chats
-      .filter((c) => c.isGroup)
-      .map((c) => ({
+      .filter((c: Chat) => c.isGroup)
+      .map((c: Chat) => ({
         id: c.id._serialized,
         name: c.name,
         participants:
