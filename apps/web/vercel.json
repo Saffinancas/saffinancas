@@ -1,9 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm --filter @cofre/web build",
-  "installCommand": "pnpm install --frozen-lockfile",
   "framework": "nextjs",
-    "outputDirectory": ".next",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "buildCommand": "cd ../.. && pnpm --filter @cofre/web build",
+  "outputDirectory": ".next",
   "regions": ["gru1"],
   "crons": [
     {
