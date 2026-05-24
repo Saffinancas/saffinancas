@@ -51,3 +51,6 @@ coverage/
 # PGlite local (dev only — produção usa Neon/Supabase)
 .pglite/
 packages/db/.pglite/
+
+.vercel
+.env*
