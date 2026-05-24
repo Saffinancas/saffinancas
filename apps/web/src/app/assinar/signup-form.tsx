@@ -34,7 +34,7 @@ export function SignupForm() {
         name,
         email,
         password,
-        callbackURL: "/app/onboarding",
+        callbackURL: "/app",
       });
       if (res.error) {
         setError(res.error.message ?? "Não conseguimos criar sua conta.");
@@ -55,7 +55,7 @@ export function SignupForm() {
         return;
       }
 
-      router.push("/app/onboarding");
+      router.push("/app");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado.");
