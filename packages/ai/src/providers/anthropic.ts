@@ -40,8 +40,8 @@ export class AnthropicClassifier implements AIClassifier {
   async classify(ctx: ClassifyContext): Promise<TransactionDraft> {
     const userPrompt = buildUserPrompt(ctx);
 
-    // Quando tem imagem, envia como content multi-modal pra Claude Vision.
-    // Haiku 4.5 suporta vision nativamente.
+    // Quando tem anexo, envia como content multi-modal.
+    // Haiku 4.5 suporta vision (imagens) e leitura de PDFs nativamente.
     const userContent = ctx.image
       ? [
           {
@@ -61,7 +61,27 @@ export class AnthropicClassifier implements AIClassifier {
               "fornecer detalhes extras, combine com o que está na imagem.",
           },
         ]
-      : userPrompt;
+      : ctx.document
+        ? [
+            {
+              type: "document" as const,
+              source: {
+                type: "base64" as const,
+                media_type: ctx.document.mimeType,
+                data: ctx.document.base64,
+              },
+            },
+            {
+              type: "text" as const,
+              text:
+                userPrompt +
+                "\n\nO PDF acima é um boleto/fatura/NF/comprovante. Extraia o valor total, " +
+                "descrição (emissor/finalidade), data de vencimento se houver, e categoria. " +
+                "Para boletos: tipo=expense, occurred_at=hoje (será o lançamento)." +
+                " Para NF de receita: tipo=income.",
+            },
+          ]
+        : userPrompt;
 
     const res = await this.client.messages.create({
       model: this.model,

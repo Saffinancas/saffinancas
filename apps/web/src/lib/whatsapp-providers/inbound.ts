@@ -189,18 +189,25 @@ async function ingestForFamily(
     family.byokEnabled && family.byokProvider ? family.byokProvider : family.aiProvider;
   const classifier = createClassifier(aiProvider);
 
-  // Se veio imagem, baixa e converte pra base64 antes de enviar pra IA
-  const image = await downloadImageForAI(msg);
+  // Se veio anexo (imagem ou PDF), baixa e converte pra base64 antes da IA
+  const attachment = await downloadAttachmentForAI(msg);
 
   let draft: TransactionDraft;
   try {
     draft = await classifier.classify({
-      text: msg.body || (image ? "(comprovante anexado)" : ""),
+      text:
+        msg.body ||
+        (attachment?.kind === "image"
+          ? "(comprovante anexado)"
+          : attachment?.kind === "document"
+            ? "(documento PDF anexado)"
+            : ""),
       senderName: msg.senderName ?? undefined,
       timezone: family.timezone ?? "America/Sao_Paulo",
       receivedAt: msg.receivedAt,
       locale: "pt-BR",
-      image: image ?? undefined,
+      image: attachment?.kind === "image" ? attachment.image : undefined,
+      document: attachment?.kind === "document" ? attachment.document : undefined,
     });
   } catch (err) {
     console.error("[whatsapp.inbound] classify failed", err);
@@ -312,26 +319,33 @@ async function safeReply(provider: WhatsappProvider, to: string, body: string): 
   }
 }
 
-const SUPPORTED_IMAGE_MIME = new Set([
+type ImageMime = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+const SUPPORTED_IMAGE_MIME = new Set<ImageMime>([
   "image/jpeg",
   "image/png",
   "image/gif",
   "image/webp",
 ]);
 
+type AttachmentForAI =
+  | { kind: "image"; image: { base64: string; mimeType: ImageMime } }
+  | { kind: "document"; document: { base64: string; mimeType: "application/pdf" } };
+
 /**
- * Baixa a imagem anexa do provider e retorna base64 + mime. Twilio exige
- * Basic auth com SID:Token. Outros providers podem precisar de outras coisas.
- * Retorna null se não tem imagem ou se falhou.
+ * Baixa o anexo da mensagem (imagem OU PDF) e retorna base64 + mime
+ * pra ser passado ao classifier de IA. Twilio exige Basic auth com SID:Token.
+ * Limita 5MB pra imagens, 10MB pra PDFs.
  */
-async function downloadImageForAI(
+async function downloadAttachmentForAI(
   msg: IncomingMessage,
-): Promise<{ base64: string; mimeType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" } | null> {
+): Promise<AttachmentForAI | null> {
   if (!msg.mediaUrl || !msg.mediaType) return null;
-  if (!SUPPORTED_IMAGE_MIME.has(msg.mediaType)) return null;
+
+  const isImage = SUPPORTED_IMAGE_MIME.has(msg.mediaType as ImageMime);
+  const isPdf = msg.mediaType === "application/pdf";
+  if (!isImage && !isPdf) return null;
 
   try {
-    // Twilio: precisa Basic auth pra baixar mídia
     const { getPlatformSetting } = await import("@/lib/platform-settings");
     const [sid, token] = await Promise.all([
       getPlatformSetting("whatsapp.twilio.account_sid"),
@@ -345,21 +359,26 @@ async function downloadImageForAI(
 
     const res = await fetch(msg.mediaUrl, { headers });
     if (!res.ok) {
-      console.error("[whatsapp.inbound] download image failed", res.status, msg.mediaUrl);
+      console.error("[whatsapp.inbound] download failed", res.status, msg.mediaUrl);
       return null;
     }
     const buf = Buffer.from(await res.arrayBuffer());
-    // Sanity check: limita a ~5MB pra não estourar tokens
-    if (buf.length > 5 * 1024 * 1024) {
-      console.warn("[whatsapp.inbound] image too large, skipping vision", buf.length);
+    const maxBytes = isPdf ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (buf.length > maxBytes) {
+      console.warn("[whatsapp.inbound] attachment too large", buf.length, msg.mediaType);
       return null;
     }
+    const base64 = buf.toString("base64");
+
+    if (isPdf) {
+      return { kind: "document", document: { base64, mimeType: "application/pdf" } };
+    }
     return {
-      base64: buf.toString("base64"),
-      mimeType: msg.mediaType as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+      kind: "image",
+      image: { base64, mimeType: msg.mediaType as ImageMime },
     };
   } catch (err) {
-    console.error("[whatsapp.inbound] image download error", err);
+    console.error("[whatsapp.inbound] attachment download error", err);
     return null;
   }
 }

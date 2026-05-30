@@ -45,6 +45,14 @@ export interface ClassifyContext {
     /** MIME ex.: "image/jpeg", "image/png". */
     mimeType: "image/jpeg" | "image/png" | "image/gif" | "image/webp";
   };
+  /**
+   * PDF anexo (boleto, fatura, NF). Claude lê o documento (texto + visual)
+   * direto, sem precisar OCR externo.
+   */
+  document?: {
+    base64: string;
+    mimeType: "application/pdf";
+  };
 }
 
 export interface AIClassifier {
