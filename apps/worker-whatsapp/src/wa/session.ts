@@ -109,7 +109,11 @@ export class WaSession {
       await this.persist();
     });
 
-    this.client.on("message", (msg: Message) => {
+    // 'message_create' dispara pra TODAS as mensagens — incluindo as enviadas
+    // pelo próprio número pareado. 'message' só dispara pras recebidas dos outros.
+    // No nosso caso o usuário pareia o próprio celular, então a maioria das
+    // mensagens vem como "fromMe" e precisamos capturá-las.
+    this.client.on("message_create", (msg: Message) => {
       this.handleIncomingMessage(msg).catch((err) =>
         log.error({ err, familyId: this.familyId }, "Erro ao tratar mensagem"),
       );
