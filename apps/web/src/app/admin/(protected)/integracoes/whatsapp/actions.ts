@@ -15,13 +15,6 @@ const VALID_PROVIDERS = new Set<WhatsappProviderId>([
   "meta_cloud",
 ]);
 
-const ENCRYPTED_KEYS = new Set([
-  "whatsapp.twilio.account_sid",
-  "whatsapp.twilio.auth_token",
-  "whatsapp.meta.access_token",
-  "whatsapp.meta.app_secret",
-]);
-
 async function requireAdmin(): Promise<string> {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) throw new Error("Não autenticado.");
@@ -133,7 +126,3 @@ export async function generateMetaVerifyToken(): Promise<string> {
   return randomBytes(24).toString("hex");
 }
 
-// helper pra detectar se uma chave é encriptada (sem tocar no DB)
-export function isEncryptedKey(key: string): boolean {
-  return ENCRYPTED_KEYS.has(key);
-}
