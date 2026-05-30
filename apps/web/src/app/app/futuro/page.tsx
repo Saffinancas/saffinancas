@@ -1,16 +1,12 @@
-import { ComingSoon } from "@/components/coming-soon";
+import { listFutureIncomes, forecastCashflow } from "@/lib/future";
+import { FuturoClient } from "./client";
 
-export default function FuturoPage() {
-  return (
-    <ComingSoon
-      title="Receitas e dívidas futuras"
-      description="O que vai entrar nos próximos meses e como isso impacta o fluxo de caixa."
-      bullets={[
-        "13º salário, freelances combinados, restituição de IR",
-        "Empréstimo a receber com parcelas previstas",
-        "Gráfico de fluxo de caixa 12 meses à frente",
-        "Indicação de quando o resultado fica positivo/negativo",
-      ]}
-    />
-  );
+export const dynamic = "force-dynamic";
+
+export default async function FuturoPage() {
+  const [incomes, forecast] = await Promise.all([
+    listFutureIncomes(),
+    forecastCashflow(12),
+  ]);
+  return <FuturoClient incomes={incomes} forecast={forecast} />;
 }

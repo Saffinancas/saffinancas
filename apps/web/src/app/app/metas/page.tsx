@@ -1,16 +1,9 @@
-import { ComingSoon } from "@/components/coming-soon";
+import { listGoals } from "@/lib/goals";
+import { MetasClient } from "./client";
 
-export default function MetasPage() {
-  return (
-    <ComingSoon
-      title="Metas"
-      description="Reservar dinheiro pra objetivos concretos da família."
-      bullets={[
-        "Criar meta com valor alvo, prazo e foto",
-        "Links externos (ex.: link da Webmotors com o modelo desejado)",
-        "Anotações em markdown e aporte manual ou automático",
-        "Projeção: 'no ritmo atual você atinge em março/2028'",
-      ]}
-    />
-  );
+export const dynamic = "force-dynamic";
+
+export default async function MetasPage() {
+  const goals = await listGoals();
+  return <MetasClient initial={goals} />;
 }
