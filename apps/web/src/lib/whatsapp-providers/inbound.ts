@@ -74,7 +74,21 @@ export async function handleIncomingMessage(
     .limit(1);
 
   if (!link) {
-    // Não vinculado — instrui usuário a vincular
+    // Debug log — porque o link não foi encontrado?
+    const allLinks = await db
+      .select({
+        provider: schema.whatsappGroupLinks.provider,
+        externalChatId: schema.whatsappGroupLinks.externalChatId,
+        archivedAt: schema.whatsappGroupLinks.archivedAt,
+      })
+      .from(schema.whatsappGroupLinks);
+    console.log("[whatsapp inbound] LINK NOT FOUND", {
+      lookupProvider: providerId,
+      lookupExternalChatId: msg.externalChatId,
+      senderPhone: msg.senderPhone,
+      from: msg.externalChatId,
+      allLinksInDb: allLinks,
+    });
     await safeReply(
       provider,
       msg.senderPhone,
