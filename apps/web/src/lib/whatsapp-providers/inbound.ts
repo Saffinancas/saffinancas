@@ -189,14 +189,18 @@ async function ingestForFamily(
     family.byokEnabled && family.byokProvider ? family.byokProvider : family.aiProvider;
   const classifier = createClassifier(aiProvider);
 
+  // Se veio imagem, baixa e converte pra base64 antes de enviar pra IA
+  const image = await downloadImageForAI(msg);
+
   let draft: TransactionDraft;
   try {
     draft = await classifier.classify({
-      text: msg.body,
+      text: msg.body || (image ? "(comprovante anexado)" : ""),
       senderName: msg.senderName ?? undefined,
       timezone: family.timezone ?? "America/Sao_Paulo",
       receivedAt: msg.receivedAt,
       locale: "pt-BR",
+      image: image ?? undefined,
     });
   } catch (err) {
     console.error("[whatsapp.inbound] classify failed", err);
@@ -305,5 +309,57 @@ async function safeReply(provider: WhatsappProvider, to: string, body: string): 
     await provider.sendMessage({ to, body });
   } catch (err) {
     console.error("[whatsapp.inbound] reply failed", err);
+  }
+}
+
+const SUPPORTED_IMAGE_MIME = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+]);
+
+/**
+ * Baixa a imagem anexa do provider e retorna base64 + mime. Twilio exige
+ * Basic auth com SID:Token. Outros providers podem precisar de outras coisas.
+ * Retorna null se não tem imagem ou se falhou.
+ */
+async function downloadImageForAI(
+  msg: IncomingMessage,
+): Promise<{ base64: string; mimeType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" } | null> {
+  if (!msg.mediaUrl || !msg.mediaType) return null;
+  if (!SUPPORTED_IMAGE_MIME.has(msg.mediaType)) return null;
+
+  try {
+    // Twilio: precisa Basic auth pra baixar mídia
+    const { getPlatformSetting } = await import("@/lib/platform-settings");
+    const [sid, token] = await Promise.all([
+      getPlatformSetting("whatsapp.twilio.account_sid"),
+      getPlatformSetting("whatsapp.twilio.auth_token"),
+    ]);
+    const headers: Record<string, string> = {};
+    if (sid && token) {
+      headers["Authorization"] =
+        "Basic " + Buffer.from(`${sid}:${token}`).toString("base64");
+    }
+
+    const res = await fetch(msg.mediaUrl, { headers });
+    if (!res.ok) {
+      console.error("[whatsapp.inbound] download image failed", res.status, msg.mediaUrl);
+      return null;
+    }
+    const buf = Buffer.from(await res.arrayBuffer());
+    // Sanity check: limita a ~5MB pra não estourar tokens
+    if (buf.length > 5 * 1024 * 1024) {
+      console.warn("[whatsapp.inbound] image too large, skipping vision", buf.length);
+      return null;
+    }
+    return {
+      base64: buf.toString("base64"),
+      mimeType: msg.mediaType as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+    };
+  } catch (err) {
+    console.error("[whatsapp.inbound] image download error", err);
+    return null;
   }
 }

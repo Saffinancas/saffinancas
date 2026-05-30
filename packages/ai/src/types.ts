@@ -27,7 +27,7 @@ export interface ClassifyContext {
   receivedAt?: string;
   /** Timezone IANA da família (ex.: America/Sao_Paulo) */
   timezone?: string;
-  /** Mensagem bruta (texto, transcript de áudio, OCR de imagem). */
+  /** Mensagem bruta (texto, transcript de áudio, caption de imagem). */
   text: string;
   /** Nome de quem mandou no grupo. */
   senderName?: string;
@@ -35,6 +35,16 @@ export interface ClassifyContext {
   knownCategories?: string[];
   /** Idioma esperado para a saída. */
   locale?: "pt-BR";
+  /**
+   * Imagem anexa (comprovante, recibo, nota). Quando presente, o classifier
+   * vê o conteúdo visual e extrai valor + descrição direto da imagem.
+   */
+  image?: {
+    /** Base64 puro (sem o data: URI). */
+    base64: string;
+    /** MIME ex.: "image/jpeg", "image/png". */
+    mimeType: "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+  };
 }
 
 export interface AIClassifier {

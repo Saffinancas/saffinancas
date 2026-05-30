@@ -38,6 +38,31 @@ export class AnthropicClassifier implements AIClassifier {
   ) {}
 
   async classify(ctx: ClassifyContext): Promise<TransactionDraft> {
+    const userPrompt = buildUserPrompt(ctx);
+
+    // Quando tem imagem, envia como content multi-modal pra Claude Vision.
+    // Haiku 4.5 suporta vision nativamente.
+    const userContent = ctx.image
+      ? [
+          {
+            type: "image" as const,
+            source: {
+              type: "base64" as const,
+              media_type: ctx.image.mimeType,
+              data: ctx.image.base64,
+            },
+          },
+          {
+            type: "text" as const,
+            text:
+              userPrompt +
+              "\n\nA imagem acima é um comprovante/recibo/nota. Extraia o valor total, " +
+              "descrição (estabelecimento/produto/serviço) e categoria. Se a legenda " +
+              "fornecer detalhes extras, combine com o que está na imagem.",
+          },
+        ]
+      : userPrompt;
+
     const res = await this.client.messages.create({
       model: this.model,
       max_tokens: 512,
@@ -50,7 +75,7 @@ export class AnthropicClassifier implements AIClassifier {
         },
       ],
       tool_choice: { type: "tool", name: TOOL_NAME },
-      messages: [{ role: "user", content: buildUserPrompt(ctx) }],
+      messages: [{ role: "user", content: userContent }],
     });
 
     const tool = res.content.find((c) => c.type === "tool_use");
