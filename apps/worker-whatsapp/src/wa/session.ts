@@ -134,6 +134,21 @@ export class WaSession {
       .limit(1);
 
     const monitored = session?.groupId;
+    log.info(
+      {
+        familyId: this.familyId,
+        from: msg.from,
+        to: msg.to,
+        fromMe: msg.fromMe,
+        type: msg.type,
+        bodyLen: msg.body?.length ?? 0,
+        bodyPreview: msg.body?.slice(0, 50),
+        monitored,
+        match: msg.from === monitored,
+      },
+      "msg recebida",
+    );
+
     if (!monitored) return;
     if (msg.from !== monitored) return;
     if (!msg.body || msg.body.length === 0) return;
