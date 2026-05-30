@@ -29,6 +29,7 @@ export type SaveProviderInput = {
     accountSid?: string;
     authToken?: string;
     from?: string;
+    joinCode?: string;
   };
   meta?: {
     phoneNumberId?: string;
@@ -67,6 +68,13 @@ export async function saveWhatsappConfig(input: SaveProviderInput): Promise<{ ok
           ? input.twilio.from
           : `whatsapp:${input.twilio.from}`;
         await setPlatformSetting("whatsapp.twilio.from", from, { updatedByUserId: userId });
+      }
+      if (input.twilio?.joinCode) {
+        await setPlatformSetting(
+          "whatsapp.twilio.sandbox_join_code",
+          input.twilio.joinCode,
+          { updatedByUserId: userId },
+        );
       }
     }
 

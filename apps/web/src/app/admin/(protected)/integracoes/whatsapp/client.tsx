@@ -36,6 +36,7 @@ export function WhatsappAdminClient({
   const [twAccountSid, setTwAccountSid] = React.useState("");
   const [twAuthToken, setTwAuthToken] = React.useState("");
   const [twFrom, setTwFrom] = React.useState("");
+  const [twJoinCode, setTwJoinCode] = React.useState("");
 
   // Meta
   const [mtPhoneId, setMtPhoneId] = React.useState("");
@@ -55,6 +56,7 @@ export function WhatsappAdminClient({
               accountSid: twAccountSid || undefined,
               authToken: twAuthToken || undefined,
               from: twFrom || undefined,
+              joinCode: twJoinCode || undefined,
             }
           : undefined,
       meta:
@@ -119,9 +121,11 @@ export function WhatsappAdminClient({
           twAccountSid={twAccountSid}
           twAuthToken={twAuthToken}
           twFrom={twFrom}
+          twJoinCode={twJoinCode}
           setTwAccountSid={setTwAccountSid}
           setTwAuthToken={setTwAuthToken}
           setTwFrom={setTwFrom}
+          setTwJoinCode={setTwJoinCode}
         />
       )}
 
@@ -170,18 +174,22 @@ function TwilioFields({
   twAccountSid,
   twAuthToken,
   twFrom,
+  twJoinCode,
   setTwAccountSid,
   setTwAuthToken,
   setTwFrom,
+  setTwJoinCode,
 }: {
   provider: WhatsappProviderId;
   settings: SettingMap;
   twAccountSid: string;
   twAuthToken: string;
   twFrom: string;
+  twJoinCode: string;
   setTwAccountSid: (s: string) => void;
   setTwAuthToken: (s: string) => void;
   setTwFrom: (s: string) => void;
+  setTwJoinCode: (s: string) => void;
 }) {
   const webhookUrl =
     typeof window !== "undefined"
@@ -232,6 +240,37 @@ function TwilioFields({
             </p>
           )}
         </div>
+        {provider === "twilio_sandbox" && (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="tw-join">
+              Sandbox Join Code (frase &ldquo;join xxx-yyy&rdquo;)
+            </Label>
+            <Input
+              id="tw-join"
+              placeholder="join silly-elephant"
+              value={twJoinCode}
+              onChange={(e) => setTwJoinCode(e.target.value)}
+            />
+            <p className="text-[10px] text-[var(--color-fg-subtle)]">
+              Pega em{" "}
+              <a
+                href="https://console.twilio.com/us1/develop/sms/try-it-out/whatsapp-learn"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="underline"
+              >
+                Twilio → WhatsApp Sandbox
+              </a>
+              . Cliente precisa enviar essa frase exata pro número From antes
+              do código de vinculação.
+            </p>
+            {settings["whatsapp.twilio.sandbox_join_code"]?.masked && (
+              <p className="text-[10px] text-[var(--color-fg-subtle)]">
+                Atual: {settings["whatsapp.twilio.sandbox_join_code"]?.masked}
+              </p>
+            )}
+          </div>
+        )}
         <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-3 text-xs">
           <p className="font-medium">Webhook URL pra Twilio</p>
           <code className="mt-1 block break-all text-[10px]">{webhookUrl}</code>

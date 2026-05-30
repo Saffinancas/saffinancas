@@ -210,9 +210,27 @@ function LinkCodeCard({
           </li>
           {sandbox && (
             <li>
-              <strong>Ative o sandbox Twilio</strong> (única vez): mande um WhatsApp pro
-              número acima com o código <code>join &lt;palavras-secretas&gt;</code> que
-              o admin colou no painel da Twilio.
+              <strong>Ative o sandbox Twilio</strong> (única vez): mande esta mensagem
+              pro número acima:
+              {view.sandboxJoinCode ? (
+                <div className="mt-2 flex items-center gap-2 rounded-[var(--radius)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface-muted)] p-2">
+                  <code className="font-bold tracking-wider">{view.sandboxJoinCode}</code>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      navigator.clipboard.writeText(view.sandboxJoinCode ?? "")
+                    }
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <span className="text-[var(--color-fg-muted)]">
+                  {" "}
+                  (admin ainda não configurou o &ldquo;join code&rdquo;)
+                </span>
+              )}
             </li>
           )}
           <li>

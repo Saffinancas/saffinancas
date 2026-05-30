@@ -7,6 +7,7 @@ import { db, schema } from "@cofre/db";
 import { auth } from "@/lib/auth";
 import { id } from "@/lib/ids";
 import { getActiveProviderId, getActiveProvider, type WhatsappProviderId } from "@/lib/whatsapp-providers";
+import { getPlatformSetting } from "@/lib/platform-settings";
 
 /**
  * Adapter de WhatsApp.
@@ -51,6 +52,8 @@ export type WaSessionView = {
   linkCodeExpiresAt: string | null;
   needsQrPairing: boolean;
   supportsGroups: boolean;
+  /** Frase "join xxx-yyy" pro sandbox Twilio (só populada quando provider=twilio_sandbox). */
+  sandboxJoinCode: string | null;
 };
 
 export type WaGroup = {
@@ -109,6 +112,10 @@ export async function getSessionView(): Promise<WaSessionView> {
   const provider = await getActiveProvider();
   const caps = provider.capabilities;
   const botIdentifier = await provider.getBotIdentifier().catch(() => null);
+  const sandboxJoinCode =
+    providerId === "twilio_sandbox"
+      ? await getPlatformSetting("whatsapp.twilio.sandbox_join_code")
+      : null;
 
   if (!s && !workerState) {
     return {
@@ -127,6 +134,7 @@ export async function getSessionView(): Promise<WaSessionView> {
       linkCodeExpiresAt: null,
       needsQrPairing: caps.needsQrPairing,
       supportsGroups: caps.supportsGroups,
+      sandboxJoinCode,
     };
   }
 
@@ -147,6 +155,7 @@ export async function getSessionView(): Promise<WaSessionView> {
     linkCodeExpiresAt: s?.linkCodeExpiresAt?.toISOString() ?? null,
     needsQrPairing: caps.needsQrPairing,
     supportsGroups: caps.supportsGroups,
+    sandboxJoinCode,
   };
 }
 
