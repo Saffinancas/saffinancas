@@ -74,21 +74,6 @@ export async function handleIncomingMessage(
     .limit(1);
 
   if (!link) {
-    // Debug log — porque o link não foi encontrado?
-    const allLinks = await db
-      .select({
-        provider: schema.whatsappGroupLinks.provider,
-        externalChatId: schema.whatsappGroupLinks.externalChatId,
-        archivedAt: schema.whatsappGroupLinks.archivedAt,
-      })
-      .from(schema.whatsappGroupLinks);
-    console.log("[whatsapp inbound] LINK NOT FOUND", {
-      lookupProvider: providerId,
-      lookupExternalChatId: msg.externalChatId,
-      senderPhone: msg.senderPhone,
-      from: msg.externalChatId,
-      allLinksInDb: allLinks,
-    });
     await safeReply(
       provider,
       msg.senderPhone,
@@ -121,7 +106,7 @@ async function tryLinkByCode(
     return { status: "error", message: "code_expired" };
   }
 
-  // Cria o link (ou ignora se já existe pra essa combinação)
+  // Cria ou REATIVA o link (se já existia arquivado).
   await db
     .insert(schema.whatsappGroupLinks)
     .values({
@@ -132,7 +117,16 @@ async function tryLinkByCode(
       chatName: msg.groupName ?? null,
       isGroup: msg.isGroup,
     })
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: [schema.whatsappGroupLinks.provider, schema.whatsappGroupLinks.externalChatId],
+      set: {
+        familyId: session.familyId,
+        chatName: msg.groupName ?? null,
+        isGroup: msg.isGroup,
+        archivedAt: null,
+        linkedAt: new Date(),
+      },
+    });
 
   // Limpa o code (one-time use) e marca sessão como conectada
   await db
