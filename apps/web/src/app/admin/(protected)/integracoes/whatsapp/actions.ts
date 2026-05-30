@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { randomBytes } from "node:crypto";
 import { auth } from "@/lib/auth";
 import { setPlatformSetting, deletePlatformSetting } from "@/lib/platform-settings";
-import type { WhatsappProviderId } from "@/lib/whatsapp-providers";
+import type { WhatsappProviderId } from "@/lib/whatsapp-providers/labels";
 
 const VALID_PROVIDERS = new Set<WhatsappProviderId>([
   "sim",

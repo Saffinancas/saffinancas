@@ -5,12 +5,8 @@
  * e a app/web e os webhooks roteiam para o provider correto.
  */
 
-export type WhatsappProviderId =
-  | "sim"
-  | "web_js"
-  | "twilio_sandbox"
-  | "twilio_production"
-  | "meta_cloud";
+export type { WhatsappProviderId } from "./labels";
+import type { WhatsappProviderId } from "./labels";
 
 export type WhatsappCapabilities = {
   /** Suporta operar dentro de grupos (não só DM)? */

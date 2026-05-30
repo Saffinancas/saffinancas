@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { saveWhatsappConfig, generateMetaVerifyToken } from "./actions";
-import type { WhatsappProviderId } from "@/lib/whatsapp-providers";
-import { PROVIDER_LABELS } from "@/lib/whatsapp-providers";
+import type { WhatsappProviderId } from "@/lib/whatsapp-providers/labels";
+import { PROVIDER_LABELS } from "@/lib/whatsapp-providers/labels";
 
 type SettingMap = Record<string, { masked: string | null; hasValue: boolean }>;
 
