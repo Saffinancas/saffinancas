@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "@cofre/db";
 import { auth } from "@/lib/auth";
 import { id } from "@/lib/ids";
+import { getActiveProviderId, getActiveProvider, type WhatsappProviderId } from "@/lib/whatsapp-providers";
 
 /**
  * Adapter de WhatsApp.
@@ -39,6 +40,17 @@ export type WaSessionView = {
   monitoredGroupId: string | null;
   monitoredGroupName: string | null;
   mode: "sim" | "real";
+  /** Provider ativo da plataforma (sim, web_js, twilio_sandbox, twilio_production, meta_cloud). */
+  provider: WhatsappProviderId;
+  /** Como o cliente deve parear. */
+  pairingInstructions: string;
+  /** Número do bot pra cliente adicionar/contatar (Twilio/Meta only). */
+  botIdentifier: string | null;
+  /** Código one-time pro cliente vincular o chat (Twilio/Meta only). */
+  linkCode: string | null;
+  linkCodeExpiresAt: string | null;
+  needsQrPairing: boolean;
+  supportsGroups: boolean;
 };
 
 export type WaGroup = {
@@ -93,6 +105,11 @@ export async function getSessionView(): Promise<WaSessionView> {
     }
   }
 
+  const providerId = await getActiveProviderId();
+  const provider = await getActiveProvider();
+  const caps = provider.capabilities;
+  const botIdentifier = await provider.getBotIdentifier().catch(() => null);
+
   if (!s && !workerState) {
     return {
       status: "unpaired",
@@ -103,6 +120,13 @@ export async function getSessionView(): Promise<WaSessionView> {
       monitoredGroupId: null,
       monitoredGroupName: null,
       mode: MODE,
+      provider: providerId,
+      pairingInstructions: caps.pairingInstructions,
+      botIdentifier,
+      linkCode: null,
+      linkCodeExpiresAt: null,
+      needsQrPairing: caps.needsQrPairing,
+      supportsGroups: caps.supportsGroups,
     };
   }
 
@@ -116,13 +140,69 @@ export async function getSessionView(): Promise<WaSessionView> {
     monitoredGroupId: s?.monitoredGroupId ?? null,
     monitoredGroupName: s?.monitoredGroupName ?? null,
     mode: MODE,
+    provider: providerId,
+    pairingInstructions: caps.pairingInstructions,
+    botIdentifier,
+    linkCode: s?.linkCode ?? null,
+    linkCodeExpiresAt: s?.linkCodeExpiresAt?.toISOString() ?? null,
+    needsQrPairing: caps.needsQrPairing,
+    supportsGroups: caps.supportsGroups,
   };
+}
+
+/**
+ * Gera um código one-time de vinculação. Cliente manda "vincular CODE" no
+ * chat com o bot pra associar o chat (DM ou grupo) à família.
+ */
+export async function generateLinkCode(): Promise<WaSessionView> {
+  const familyId = await getFamilyId();
+  // Código alfanumérico 6 chars, fácil de digitar no WhatsApp
+  const code = Math.random().toString(36).toUpperCase().slice(2, 8);
+  const expires = new Date(Date.now() + 30 * 60 * 1000); // 30 min
+
+  const providerId = await getActiveProviderId();
+
+  const [existing] = await db
+    .select()
+    .from(schema.whatsappSessions)
+    .where(eq(schema.whatsappSessions.familyId, familyId))
+    .limit(1);
+
+  if (!existing) {
+    await db.insert(schema.whatsappSessions).values({
+      id: id("was"),
+      familyId,
+      status: "qr_pending",
+      provider: providerId,
+      linkCode: code,
+      linkCodeExpiresAt: expires,
+    });
+  } else {
+    await db
+      .update(schema.whatsappSessions)
+      .set({
+        status: "qr_pending",
+        provider: providerId,
+        linkCode: code,
+        linkCodeExpiresAt: expires,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.whatsappSessions.familyId, familyId));
+  }
+  revalidatePath("/app/whatsapp");
+  return getSessionView();
 }
 
 export async function requestPairing(): Promise<WaSessionView> {
   const familyId = await getFamilyId();
+  const providerId = await getActiveProviderId();
 
-  if (MODE === "real") {
+  // Providers webhook-based geram link code, não QR
+  if (providerId === "twilio_sandbox" || providerId === "twilio_production" || providerId === "meta_cloud") {
+    return generateLinkCode();
+  }
+
+  if (providerId === "web_js") {
     await workerFetch(`/sessions/${familyId}/pair`, { method: "POST" });
     revalidatePath("/app/whatsapp");
     return getSessionView();
@@ -185,18 +265,20 @@ export async function simulateConnect(opts: {
   return getSessionView();
 }
 
-/** REAL ONLY: lista grupos disponíveis após conectar. */
+/** web_js only: lista grupos disponíveis após conectar. */
 export async function listGroups(): Promise<WaGroup[]> {
-  if (MODE !== "real") return [];
+  const providerId = await getActiveProviderId();
+  if (providerId !== "web_js") return [];
   const familyId = await getFamilyId();
   const data = await workerFetch<{ groups: WaGroup[] }>(`/sessions/${familyId}/groups`);
   return data.groups;
 }
 
-/** Seleciona o grupo monitorado (vale pra sim e real). */
+/** Seleciona o grupo monitorado (vale pra sim e web_js). */
 export async function selectGroup(groupId: string, groupName: string): Promise<WaSessionView> {
   const familyId = await getFamilyId();
-  if (MODE === "real") {
+  const providerId = await getActiveProviderId();
+  if (providerId === "web_js") {
     await workerFetch(`/sessions/${familyId}/group`, {
       method: "POST",
       body: JSON.stringify({ groupId, groupName }),
@@ -216,13 +298,22 @@ export async function selectGroup(groupId: string, groupName: string): Promise<W
 
 export async function unpair(): Promise<WaSessionView> {
   const familyId = await getFamilyId();
+  const providerId = await getActiveProviderId();
 
-  if (MODE === "real") {
+  if (providerId === "web_js") {
     try {
       await workerFetch(`/sessions/${familyId}`, { method: "DELETE" });
     } catch {
       // Worker offline? Continua limpando o DB do nosso lado.
     }
+  }
+
+  // Pra providers webhook-based, arquiva os group_links da família (não deleta)
+  if (providerId === "twilio_sandbox" || providerId === "twilio_production" || providerId === "meta_cloud") {
+    await db
+      .update(schema.whatsappGroupLinks)
+      .set({ archivedAt: new Date() })
+      .where(eq(schema.whatsappGroupLinks.familyId, familyId));
   }
   await db
     .update(schema.whatsappSessions)

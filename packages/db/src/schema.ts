@@ -63,6 +63,14 @@ export const recurrence = pgEnum("recurrence", ["once", "monthly", "annual"]);
 
 export const plannedStatus = pgEnum("planned_status", ["to_pay", "paid", "overdue", "skipped"]);
 
+export const whatsappProvider = pgEnum("whatsapp_provider", [
+  "sim",
+  "web_js",
+  "twilio_sandbox",
+  "twilio_production",
+  "meta_cloud",
+]);
+
 export const whatsappSessionStatus = pgEnum("whatsapp_session_status", [
   "unpaired",
   "qr_pending",
@@ -254,6 +262,8 @@ export const whatsappSessions = pgTable(
     familyId: text("family_id")
       .notNull()
       .references(() => families.id, { onDelete: "cascade" }),
+    /** Provider que a família está usando AGORA. Default casa com o global. */
+    provider: whatsappProvider("provider").notNull().default("sim"),
     workerInstance: text("worker_instance"),
     status: whatsappSessionStatus("status").notNull().default("unpaired"),
     pairedPhone: varchar("paired_phone", { length: 32 }),
@@ -263,13 +273,77 @@ export const whatsappSessions = pgTable(
     sessionStorageKey: text("session_storage_key"),
     qrPayload: text("qr_payload"),
     qrExpiresAt: timestamp("qr_expires_at", { withTimezone: true }),
+    /**
+     * Código curto (6 chars) usado pra vincular um chat externo (DM ou grupo)
+     * a esta família. Cliente manda "vincular ABC123" no WhatsApp → bot acha
+     * a sessão pelo código e cria a entrada em whatsapp_group_links.
+     */
+    linkCode: varchar("link_code", { length: 8 }),
+    linkCodeExpiresAt: timestamp("link_code_expires_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
     familyUnique: uniqueIndex("wa_sessions_family_unique").on(t.familyId),
+    linkCodeIdx: uniqueIndex("wa_sessions_link_code_unique")
+      .on(t.linkCode)
+      .where(sql`${t.linkCode} is not null`),
   }),
 );
+
+/**
+ * Cada chat externo (DM número ou grupo) vinculado a uma família. Pra Twilio/
+ * Meta, é o `from`/`waId`/`chatId` que vem no webhook. Pra web-js, é o group ID.
+ */
+export const whatsappGroupLinks = pgTable(
+  "whatsapp_group_links",
+  {
+    id: text("id").primaryKey(),
+    familyId: text("family_id")
+      .notNull()
+      .references(() => families.id, { onDelete: "cascade" }),
+    provider: whatsappProvider("provider").notNull(),
+    /** ID do chat externo (formato depende do provider). */
+    externalChatId: text("external_chat_id").notNull(),
+    /** Nome amigável (nome do grupo no WhatsApp). Null pra DM. */
+    chatName: text("chat_name"),
+    isGroup: boolean("is_group").notNull().default(false),
+    linkedAt: timestamp("linked_at", { withTimezone: true }).notNull().defaultNow(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    providerChatUnique: uniqueIndex("wa_group_links_provider_chat_unique").on(
+      t.provider,
+      t.externalChatId,
+    ),
+    familyIdx: index("wa_group_links_family_idx").on(t.familyId),
+  }),
+);
+
+/**
+ * Configurações da plataforma gerenciadas pelo admin via UI. Key-value
+ * com valor opcionalmente criptografado via PLATFORM_ENCRYPTION_KEY.
+ *
+ * Chaves usadas:
+ *   - whatsapp.provider               -> "sim" | "web_js" | "twilio_*" | "meta_cloud"
+ *   - whatsapp.twilio.account_sid     (encrypted)
+ *   - whatsapp.twilio.auth_token      (encrypted)
+ *   - whatsapp.twilio.from            (ex: "whatsapp:+14155238886")
+ *   - whatsapp.meta.phone_number_id   (encrypted)
+ *   - whatsapp.meta.access_token      (encrypted)
+ *   - whatsapp.meta.verify_token      (gerado pela UI)
+ *   - whatsapp.meta.app_secret        (encrypted, opcional pra HMAC)
+ */
+export const platformSettings = pgTable("platform_settings", {
+  key: text("key").primaryKey(),
+  value: text("value"),
+  encrypted: boolean("encrypted").notNull().default(false),
+  updatedByUserId: text("updated_by_user_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const whatsappMembers = pgTable(
   "whatsapp_members",

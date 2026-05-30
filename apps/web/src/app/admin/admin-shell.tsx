@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, Users, Receipt, Activity, Settings, Shield, BrainCircuit } from "lucide-react";
+import { LogOut, Users, Receipt, Activity, Settings, Shield, BrainCircuit, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -18,6 +18,7 @@ const nav = [
   { href: "/admin/clientes", label: "Clientes", icon: Users },
   { href: "/admin/cobranca", label: "Cobrança", icon: Receipt },
   { href: "/admin/uso-ia", label: "Uso de IA", icon: BrainCircuit },
+  { href: "/admin/integracoes/whatsapp", label: "WhatsApp", icon: MessageSquare },
   { href: "/admin/auditoria", label: "Auditoria", icon: Shield },
   { href: "/admin/config", label: "Configurações", icon: Settings },
 ];

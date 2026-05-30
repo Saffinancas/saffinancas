@@ -9,6 +9,9 @@ import {
   Unlink,
   AlertCircle,
   Users,
+  Copy,
+  PhoneCall,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,10 +33,13 @@ export function WhatsappClient({ initial }: { initial: WaSessionView }) {
   const [view, setView] = React.useState(initial);
   const [loading, setLoading] = React.useState<string | null>(null);
 
-  // Polling enquanto está pareando ou no modo real (worker pode mudar estado fora do nosso request).
+  // Polling: 3s pra web_js (QR), 5s pra webhook providers (aguarda vincular)
   React.useEffect(() => {
-    if (view.mode !== "real") return;
-    if (view.status !== "qr_pending" && view.status !== "connected") return;
+    const isWebhook = view.provider === "twilio_sandbox" || view.provider === "twilio_production" || view.provider === "meta_cloud";
+    const shouldPoll =
+      (view.provider === "web_js" && (view.status === "qr_pending" || view.status === "connected")) ||
+      (isWebhook && view.status === "qr_pending");
+    if (!shouldPoll) return;
     const interval = setInterval(async () => {
       try {
         const next = await getSessionView();
@@ -41,9 +47,9 @@ export function WhatsappClient({ initial }: { initial: WaSessionView }) {
       } catch {
         /* ignore */
       }
-    }, 3000);
+    }, isWebhook ? 5000 : 3000);
     return () => clearInterval(interval);
-  }, [view.mode, view.status]);
+  }, [view.provider, view.status]);
 
   async function start() {
     setLoading("start");
@@ -56,7 +62,7 @@ export function WhatsappClient({ initial }: { initial: WaSessionView }) {
   }
 
   async function disconnect() {
-    if (!confirm("Despareia a sessão do WhatsApp?")) return;
+    if (!confirm("Despareiar a sessão do WhatsApp?")) return;
     setLoading("unpair");
     try {
       const next = await unpair();
@@ -66,32 +72,37 @@ export function WhatsappClient({ initial }: { initial: WaSessionView }) {
     }
   }
 
+  const isWebhook =
+    view.provider === "twilio_sandbox" || view.provider === "twilio_production" || view.provider === "meta_cloud";
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">WhatsApp</h1>
         <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
-          Pareie o grupo da família e cada mensagem com gasto vira transação.
+          {view.pairingInstructions}
         </p>
       </div>
 
-      {view.mode === "sim" && (
+      {view.provider === "sim" && (
         <div className="flex items-start gap-3 rounded-[var(--radius)] border border-[var(--color-warning)]/30 bg-[var(--color-warning-soft)] p-3 text-xs text-[var(--color-warning)]">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <div>
-            <p className="font-medium">Modo simulado</p>
-            <p className="mt-0.5">
-              O worker do whatsapp-web.js ainda não está rodando. Você consegue pareiar um grupo
-              fake para ver o fluxo. Defina{" "}
-              <code>WHATSAPP_MODE=real</code> + <code>WHATSAPP_WORKER_URL</code> +{" "}
-              <code>WHATSAPP_WORKER_SECRET</code> pra ligar o worker.
-            </p>
-          </div>
+          <p>
+            Modo simulado. Admin pode trocar o provedor em <code>Admin → WhatsApp</code>.
+          </p>
         </div>
       )}
 
       {view.status === "unpaired" || view.status === "disconnected" ? (
-        <UnpairedCard onStart={start} loading={loading === "start"} />
+        <UnpairedCard view={view} onStart={start} loading={loading === "start"} />
+      ) : isWebhook ? (
+        view.linkCode ? (
+          <LinkCodeCard view={view} onRefresh={start} />
+        ) : view.monitoredGroupId ? (
+          <ConnectedCard view={view} onUnpair={disconnect} loading={loading === "unpair"} />
+        ) : (
+          <UnpairedCard view={view} onStart={start} loading={loading === "start"} />
+        )
       ) : view.status === "qr_pending" ? (
         <QrPendingCard view={view} onUpdate={setView} />
       ) : view.status === "connected" ? (
@@ -104,9 +115,7 @@ export function WhatsappClient({ initial }: { initial: WaSessionView }) {
         <Card>
           <CardHeader>
             <CardTitle>Status: {view.status}</CardTitle>
-            <CardDescription>
-              Algo está fora do comum. Tente parear de novo.
-            </CardDescription>
+            <CardDescription>Tente novamente.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={start}>
@@ -119,21 +128,117 @@ export function WhatsappClient({ initial }: { initial: WaSessionView }) {
   );
 }
 
-function UnpairedCard({ onStart, loading }: { onStart: () => void; loading: boolean }) {
+function UnpairedCard({
+  view,
+  onStart,
+  loading,
+}: {
+  view: WaSessionView;
+  onStart: () => void;
+  loading: boolean;
+}) {
+  const isWebhook =
+    view.provider === "twilio_sandbox" || view.provider === "twilio_production" || view.provider === "meta_cloud";
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Conectar o grupo da família</CardTitle>
+        <CardTitle>
+          {view.needsQrPairing ? "Conectar o grupo da família" : "Vincular o WhatsApp"}
+        </CardTitle>
         <CardDescription>
-          O fluxo é igual ao do WhatsApp Web: a gente gera um QR, você lê com o celular
-          de quem está no grupo.
+          {view.needsQrPairing
+            ? "A gente gera um QR — você lê com o WhatsApp do celular."
+            : "Geramos um código curto. Você manda no WhatsApp pro nosso bot, e pronto."}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Button size="lg" onClick={onStart} disabled={loading}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <QrCode className="h-4 w-4" />}
-          {loading ? "Preparando..." : "Gerar QR Code"}
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : view.needsQrPairing ? (
+            <QrCode className="h-4 w-4" />
+          ) : (
+            <MessageCircle className="h-4 w-4" />
+          )}
+          {loading
+            ? "Preparando..."
+            : view.needsQrPairing
+              ? "Gerar QR Code"
+              : isWebhook
+                ? "Gerar código de vinculação"
+                : "Conectar"}
         </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LinkCodeCard({
+  view,
+  onRefresh,
+}: {
+  view: WaSessionView;
+  onRefresh: () => void;
+}) {
+  const sandbox = view.provider === "twilio_sandbox";
+
+  async function copyCode() {
+    if (!view.linkCode) return;
+    await navigator.clipboard.writeText(view.linkCode).catch(() => {});
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <PhoneCall className="h-5 w-5 text-[var(--color-primary)]" />
+          Vincule seu WhatsApp
+        </CardTitle>
+        <CardDescription>
+          Siga os passos no celular. Quando o bot receber o código, este cartão atualiza sozinho.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <ol className="ml-5 list-decimal space-y-3 text-sm">
+          <li>
+            <strong>Salve este número no seu celular:</strong>
+            <div className="mt-1 flex items-center gap-2">
+              <code className="rounded-[var(--radius)] bg-[var(--color-surface-muted)] px-2 py-1 text-sm">
+                {view.botIdentifier ?? "(número não configurado pelo admin)"}
+              </code>
+            </div>
+          </li>
+          {sandbox && (
+            <li>
+              <strong>Ative o sandbox Twilio</strong> (única vez): mande um WhatsApp pro
+              número acima com o código <code>join &lt;palavras-secretas&gt;</code> que
+              o admin colou no painel da Twilio.
+            </li>
+          )}
+          <li>
+            <strong>Mande esta mensagem</strong> pro bot:
+            <div className="mt-2 flex items-center gap-2 rounded-[var(--radius)] border-2 border-dashed border-[var(--color-primary)]/40 bg-[var(--color-primary-soft)]/30 p-3">
+              <code className="text-lg font-bold tracking-wider">vincular {view.linkCode}</code>
+              <Button variant="ghost" size="sm" onClick={copyCode}>
+                <Copy className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            <p className="mt-1 text-[10px] text-[var(--color-fg-subtle)]">
+              Válido até{" "}
+              {view.linkCodeExpiresAt &&
+                new Date(view.linkCodeExpiresAt).toLocaleString("pt-BR")}
+            </p>
+          </li>
+          <li>
+            Pronto. O bot responde &ldquo;✓ Vinculado&rdquo; e esta tela atualiza.
+          </li>
+        </ol>
+
+        <div className="flex gap-2">
+          <Button variant="ghost" size="sm" onClick={onRefresh}>
+            <RefreshCcw className="h-3.5 w-3.5" /> Gerar novo código
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
@@ -165,31 +270,27 @@ function QrPendingCard({
       <CardHeader>
         <CardTitle>Aguardando pareamento</CardTitle>
         <CardDescription>
-          {view.mode === "sim"
-            ? "Modo demo: preencha os campos abaixo e clique em 'Simular pareamento'."
-            : "Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho → Escaneie o QR."}
+          {view.provider === "sim"
+            ? "Modo demo: preencha abaixo e clique em 'Simular pareamento'."
+            : "Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho → escaneie."}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="grid place-items-center rounded-[var(--radius)] border border-[var(--color-border)] bg-white p-4">
           {view.qrDataUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={view.qrDataUrl}
-              alt="QR code do WhatsApp"
-              className="h-56 w-56"
-            />
+            <img src={view.qrDataUrl} alt="QR code do WhatsApp" className="h-56 w-56" />
           ) : (
             <QrPlaceholder payload={view.qrPayload ?? "—"} />
           )}
           <p className="mt-3 text-xs text-[var(--color-fg-subtle)]">
-            {view.mode === "real"
-              ? "QR válido por ~60s — atualiza sozinho se expirar."
-              : "QR ilustrativo — modo simulado."}
+            {view.provider === "web_js"
+              ? "QR válido ~60s — regenera sozinho."
+              : "QR ilustrativo (modo simulado)."}
           </p>
         </div>
 
-        {view.mode === "sim" && (
+        {view.provider === "sim" && (
           <div className="space-y-3 rounded-[var(--radius)] border border-dashed border-[var(--color-border)] p-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-fg-subtle)]">
               Simular pareamento
@@ -197,20 +298,14 @@ function QrPendingCard({
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1">
                 <Label htmlFor="wa-phone">Telefone que pareou</Label>
-                <Input
-                  id="wa-phone"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+55 11 99999-9999"
-                />
+                <Input id="wa-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
               <div className="flex flex-col gap-1">
-                <Label htmlFor="wa-group-name">Nome do grupo no WhatsApp</Label>
+                <Label htmlFor="wa-group-name">Nome do grupo</Label>
                 <Input
                   id="wa-group-name"
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
-                  placeholder="Família 🏠"
                 />
               </div>
             </div>
@@ -265,16 +360,14 @@ function GroupPickerCard({ onPicked }: { onPicked: (v: WaSessionView) => void })
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-[var(--color-primary)]" />
-            Escolha o grupo da família
+            <Users className="h-5 w-5 text-[var(--color-primary)]" /> Escolha o grupo da família
           </CardTitle>
           <Button variant="ghost" size="sm" onClick={() => void load()} disabled={loading}>
-            <RefreshCcw className={"h-4 w-4 " + (loading ? "animate-spin" : "")} />
-            Recarregar
+            <RefreshCcw className={"h-4 w-4 " + (loading ? "animate-spin" : "")} /> Recarregar
           </Button>
         </div>
         <CardDescription>
-          Selecione qual grupo a gente deve monitorar — só mensagens desse grupo viram transação.
+          Só mensagens desse grupo viram transação.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -289,8 +382,7 @@ function GroupPickerCard({ onPicked }: { onPicked: (v: WaSessionView) => void })
           </div>
         ) : groups && groups.length === 0 ? (
           <p className="text-sm text-[var(--color-fg-muted)]">
-            Nenhum grupo encontrado. Você está em algum grupo no número que pareou? Crie um
-            grupo no celular e clique em &ldquo;Recarregar&rdquo;.
+            Nenhum grupo. Crie um grupo no celular e clique &ldquo;Recarregar&rdquo;.
           </p>
         ) : (
           <ul className="flex flex-col divide-y divide-[var(--color-border)]">
@@ -302,11 +394,7 @@ function GroupPickerCard({ onPicked }: { onPicked: (v: WaSessionView) => void })
                     {g.participants} participantes
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={() => pick(g)}
-                  disabled={picking !== null}
-                >
+                <Button size="sm" onClick={() => pick(g)} disabled={picking !== null}>
                   {picking === g.id && <Loader2 className="h-4 w-4 animate-spin" />}
                   Usar este
                 </Button>
@@ -338,7 +426,7 @@ function ConnectedCard({
           </Badge>
         </div>
         <CardDescription>
-          A partir de agora, mensagens com gasto/recebimento viram transação automaticamente.
+          Cada mensagem com gasto/recebimento vira transação automaticamente.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -351,9 +439,9 @@ function ConnectedCard({
           </div>
           <div>
             <dt className="text-[10px] uppercase tracking-wider text-[var(--color-fg-subtle)]">
-              Grupo monitorado
+              {view.supportsGroups ? "Grupo monitorado" : "Chat"}
             </dt>
-            <dd className="mt-0.5 font-medium">{view.monitoredGroupName ?? "—"}</dd>
+            <dd className="mt-0.5 font-medium">{view.monitoredGroupName ?? "DM com o bot"}</dd>
           </div>
         </dl>
 
@@ -374,9 +462,7 @@ function QrPlaceholder({ payload }: { payload: string }) {
         return (
           <span
             key={i}
-            className={
-              "rounded-[1px] " + (seed < 50 ? "bg-neutral-900" : "bg-transparent")
-            }
+            className={"rounded-[1px] " + (seed < 50 ? "bg-neutral-900" : "bg-transparent")}
           />
         );
       })}
