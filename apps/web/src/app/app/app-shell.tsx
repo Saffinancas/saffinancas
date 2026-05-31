@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -20,6 +21,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { TrialBanner } from "./trial-banner";
 import { signOut } from "@/lib/auth-client";
 import type { TrialState } from "@/lib/subscription";
@@ -50,6 +59,11 @@ type Props = {
 export function AppShell({ user, family, trialState, children }: Props) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
+  const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
 
   async function handleSignOut() {
     await signOut();
@@ -61,14 +75,87 @@ export function AppShell({ user, family, trialState, children }: Props) {
     <div className="min-h-dvh bg-[var(--color-bg)] pb-20 md:pb-0">
       <header className="sticky top-0 z-30 border-b border-[var(--color-border)] bg-[var(--color-bg)]/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <Link href="/app" aria-label="Voltar ao dashboard" className="flex items-center gap-2">
-            <BrandMark />
-            {family && (
-              <span className="hidden text-xs text-[var(--color-fg-subtle)] sm:inline-block">
-                · {family.name}
-              </span>
-            )}
-          </Link>
+          <div className="flex items-center gap-2">
+            {/* Mobile: logo abre o drawer; Desktop: logo volta pro dashboard */}
+            <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+              <SheetTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Abrir menu"
+                  className="flex items-center gap-2 rounded-[var(--radius-sm)] px-1 py-0.5 hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] md:hidden"
+                >
+                  <BrandMark />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0">
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    <BrandMark />
+                  </SheetTitle>
+                  <SheetDescription>
+                    {family ? family.name : user.name ?? user.email}
+                  </SheetDescription>
+                </SheetHeader>
+
+                <nav
+                  aria-label="Menu mobile"
+                  className="flex-1 overflow-y-auto px-2 py-3"
+                >
+                  {nav.map((item) => {
+                    const active =
+                      pathname === item.href || pathname.startsWith(item.href + "/");
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMobileNavOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 rounded-[var(--radius)] px-3 py-2.5 text-sm transition-colors",
+                          active
+                            ? "bg-[var(--color-primary-soft)] text-[var(--color-primary)] font-medium"
+                            : "text-[var(--color-fg-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-fg)]",
+                        )}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </nav>
+
+                <div className="border-t border-[var(--color-border)] px-3 py-3">
+                  <div className="mb-2 px-1 text-[10px] text-[var(--color-fg-subtle)]">
+                    <p className="truncate">{user.name ?? user.email}</p>
+                    {user.name && <p className="truncate">{user.email}</p>}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setMobileNavOpen(false);
+                      handleSignOut();
+                    }}
+                    className="w-full justify-start"
+                  >
+                    <LogOut className="h-4 w-4" /> Sair
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+
+            <Link
+              href="/app"
+              aria-label="Voltar ao dashboard"
+              className="hidden items-center gap-2 md:flex"
+            >
+              <BrandMark />
+              {family && (
+                <span className="text-xs text-[var(--color-fg-subtle)]">
+                  · {family.name}
+                </span>
+              )}
+            </Link>
+          </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={handleSignOut}>
@@ -113,7 +200,7 @@ export function AppShell({ user, family, trialState, children }: Props) {
         <main>{children}</main>
       </div>
 
-      {/* Bottom nav mobile */}
+      {/* Bottom nav mobile — acesso rápido aos 5 mais usados; o drawer cobre todos */}
       <nav
         aria-label="App navigation mobile"
         className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[var(--color-border)] bg-[var(--color-bg)]/95 backdrop-blur md:hidden"
