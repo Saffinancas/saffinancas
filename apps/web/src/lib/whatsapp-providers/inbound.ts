@@ -237,6 +237,25 @@ async function ingestForFamily(
       .update(schema.whatsappMessages)
       .set({ discardedReason: "not_transaction", processedAt: new Date() })
       .where(eq(schema.whatsappMessages.id, rawId));
+
+    // Não é transação — tenta como pergunta pro agente conversacional.
+    // Só se for texto (não imagem/PDF) e provider pode responder.
+    if (msg.body && provider.capabilities.canSendMessages) {
+      try {
+        const { runAgent } = await import("./agent");
+        const reply = await runAgent({
+          text: msg.body,
+          familyId,
+          timezone: family.timezone ?? "America/Sao_Paulo",
+          senderName: msg.senderName,
+        });
+        if (reply) {
+          await safeReply(provider, msg.externalChatId, reply);
+        }
+      } catch (err) {
+        console.error("[whatsapp.inbound] agent failed", err);
+      }
+    }
     return;
   }
 
