@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
 import { ResetPasswordForm } from "./reset-form";
@@ -17,7 +18,9 @@ export default function ResetPasswordPage() {
           <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
             Escolha uma senha nova com no mínimo 8 caracteres.
           </p>
-          <ResetPasswordForm />
+          <Suspense fallback={null}>
+            <ResetPasswordForm />
+          </Suspense>
         </div>
 
         <p className="mt-4 text-center text-xs text-[var(--color-fg-subtle)]">
