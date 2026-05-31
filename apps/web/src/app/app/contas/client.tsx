@@ -34,15 +34,39 @@ export function ContasClient({
   const [busy, setBusy] = React.useState<string | null>(null);
   const [openingWidget, setOpeningWidget] = React.useState(false);
   const [globalError, setGlobalError] = React.useState<string | null>(null);
+  const [pluggyReady, setPluggyReady] = React.useState(
+    typeof window !== "undefined" && Boolean(window.PluggyConnect),
+  );
+
+  async function waitForPluggySdk(timeoutMs = 8000): Promise<void> {
+    if (window.PluggyConnect) return;
+    return new Promise<void>((resolve, reject) => {
+      const start = Date.now();
+      const tick = () => {
+        if (window.PluggyConnect) {
+          setPluggyReady(true);
+          resolve();
+          return;
+        }
+        if (Date.now() - start > timeoutMs) {
+          reject(
+            new Error(
+              "SDK Pluggy não carregou. Verifique sua conexão ou bloqueadores de script.",
+            ),
+          );
+          return;
+        }
+        setTimeout(tick, 100);
+      };
+      tick();
+    });
+  }
 
   async function openPluggyWidget() {
-    if (!window.PluggyConnect) {
-      setGlobalError("Widget Pluggy ainda carregando. Tenta de novo em 2s.");
-      return;
-    }
     setOpeningWidget(true);
     setGlobalError(null);
     try {
+      await waitForPluggySdk();
       // 1. Pede token ao server
       const tokenRes = await fetch("/api/pluggy/connect-token", { method: "POST" });
       if (!tokenRes.ok) {
@@ -52,7 +76,8 @@ export function ContasClient({
       const { token } = (await tokenRes.json()) as { token: string };
 
       // 2. Abre o widget
-      const connect = new window.PluggyConnect({
+      const PluggyConnect = window.PluggyConnect!;
+      const connect = new PluggyConnect({
         connectToken: token,
         includeSandbox: false,
         onSuccess: async ({ item }) => {
@@ -116,6 +141,11 @@ export function ContasClient({
       <Script
         src="https://cdn.pluggy.ai/pluggy-connect/v2.13.0/pluggy-connect.js"
         strategy="afterInteractive"
+        onReady={() => setPluggyReady(true)}
+        onLoad={() => setPluggyReady(true)}
+        onError={() =>
+          setGlobalError("Falha ao baixar o SDK do Pluggy. Verifique conexão/bloqueadores.")
+        }
       />
 
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -125,9 +155,17 @@ export function ContasClient({
             Conecte via Open Finance pra ver saldo e extrato em tempo real.
           </p>
         </div>
-        <Button onClick={openPluggyWidget} disabled={!pluggyEnabled || openingWidget}>
-          {openingWidget ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-          Conectar banco
+        <Button
+          onClick={openPluggyWidget}
+          disabled={!pluggyEnabled || openingWidget || !pluggyReady}
+          title={!pluggyReady ? "Aguarde — SDK do Pluggy carregando" : undefined}
+        >
+          {openingWidget || !pluggyReady ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Plus className="h-4 w-4" />
+          )}
+          {!pluggyReady ? "Carregando..." : "Conectar banco"}
         </Button>
       </div>
 
