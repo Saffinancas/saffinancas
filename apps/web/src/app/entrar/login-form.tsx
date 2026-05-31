@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -51,7 +52,15 @@ export function LoginForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="li-pwd">Senha</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="li-pwd">Senha</Label>
+          <Link
+            href="/entrar/esqueceu-senha"
+            className="text-xs text-[var(--color-fg-muted)] underline-offset-4 hover:text-[var(--color-fg)] hover:underline"
+          >
+            Esqueceu a senha?
+          </Link>
+        </div>
         <Input
           id="li-pwd"
           type="password"

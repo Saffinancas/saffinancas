@@ -2,8 +2,16 @@
 
 import { createAuthClient } from "better-auth/react";
 
-export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
-});
+// Sem baseURL: o Better Auth usa window.location.origin no browser. Isso evita
+// que builds com NEXT_PUBLIC_APP_URL apontando pra outro host (ex.: URL técnica
+// do Vercel) batam em outra origem e quebrem com CORS.
+export const authClient = createAuthClient();
 
-export const { signIn, signOut, signUp, useSession } = authClient;
+export const {
+  signIn,
+  signOut,
+  signUp,
+  useSession,
+  requestPasswordReset,
+  resetPassword,
+} = authClient;

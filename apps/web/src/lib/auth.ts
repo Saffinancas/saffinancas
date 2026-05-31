@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { db, schema } from "@cofre/db";
 import { BRAND } from "@/lib/brand";
+import { sendPasswordResetEmail } from "@/lib/auth-email";
 
 /**
  * Better Auth — single instance compartilhada por cliente final e admin.
@@ -12,9 +13,28 @@ import { BRAND } from "@/lib/brand";
  *  - Em dev, deixamos `autoSignIn=true` no signUpEmail pra não precisar de
  *    fluxo de magic link.
  */
+const publicUrl =
+  process.env.NEXT_PUBLIC_APP_URL ??
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "http://localhost:3000");
+
+const trustedOrigins = Array.from(
+  new Set(
+    [
+      publicUrl,
+      `https://${BRAND.domain}`,
+      `https://www.${BRAND.domain}`,
+      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+      process.env.VERCEL_BRANCH_URL ? `https://${process.env.VERCEL_BRANCH_URL}` : null,
+    ].filter((v): v is string => Boolean(v)),
+  ),
+);
+
 export const auth = betterAuth({
   appName: BRAND.name,
-  baseURL: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+  baseURL: publicUrl,
+  trustedOrigins,
   secret:
     process.env.BETTER_AUTH_SECRET ??
     "dev-only-not-for-prod-please-set-BETTER_AUTH_SECRET-in-env",
@@ -34,6 +54,14 @@ export const auth = betterAuth({
     autoSignIn: true,
     minPasswordLength: 8,
     requireEmailVerification: false,
+    sendResetPassword: async ({ user, url }) => {
+      await sendPasswordResetEmail({
+        to: user.email,
+        userName: user.name ?? null,
+        resetUrl: url,
+      });
+    },
+    resetPasswordTokenExpiresIn: 60 * 60, // 1 hora
   },
 
   user: {
