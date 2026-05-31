@@ -6,23 +6,19 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "@cofre/db";
 import { auth } from "@/lib/auth";
 import { BRAND } from "@/lib/brand";
+import { getPlatformSetting } from "@/lib/platform-settings";
 
 /**
- * Adapter Pagar.me v5 em **modo simulado** até as chaves serem plugadas no .env.
+ * Adapter Pagar.me v5 em **modo simulado** até as chaves serem plugadas.
  *
- * Quando `PAGARME_API_KEY` estiver setado:
- *   - createSubscription faz POST real em https://api.pagar.me/core/v5/subscriptions
- *   - webhooks são processados em /api/webhooks/pagarme
- *
- * Em modo sim:
- *   - createSubscription só promove o status pra 'active' com nextBillingAt = +30d
- *   - útil pra desenvolver o fluxo cliente sem precisar de cartão real
+ * Quando `pagarme.api_key` (platform_settings ou env PAGARME_API_KEY) estiver
+ * setado, o modo passa pra "real". Webhooks são processados em
+ * /api/webhooks/pagarme.
  */
 
-const MODE = (process.env.PAGARME_API_KEY?.trim() ? "real" : "sim") as "sim" | "real";
-
 export async function pagarmeMode(): Promise<"sim" | "real"> {
-  return MODE;
+  const k = await getPlatformSetting("pagarme.api_key");
+  return k?.trim() ? "real" : "sim";
 }
 
 type CardSim = {
@@ -44,7 +40,8 @@ export async function attachCardAndActivate(card: CardSim): Promise<{ ok: true }
     return { ok: false, error: "Número de cartão inválido." };
   }
 
-  if (MODE === "real") {
+  const mode = await pagarmeMode();
+  if (mode === "real") {
     // TODO: chamada real ao Pagar.me v5 — criar customer, card, subscription.
     // Stub para não quebrar build.
     return { ok: false, error: "Pagar.me real ainda não implementado nesta release." };
@@ -76,6 +73,6 @@ export async function getPricingForBrand() {
     monthly: BRAND.pricing.monthlyBRL,
     annual: BRAND.pricing.annualBRL,
     trialDays: BRAND.pricing.trialDays,
-    mode: MODE,
+    mode: await pagarmeMode(),
   };
 }

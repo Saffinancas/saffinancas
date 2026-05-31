@@ -1,9 +1,9 @@
 "use server";
 
 import { BRAND } from "@/lib/brand";
+import { getPlatformSetting } from "@/lib/platform-settings";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
-const FROM = process.env.EMAIL_FROM ?? `${BRAND.name} <${BRAND.email.noReply}>`;
 
 type ResetEmailOpts = {
   to: string;
@@ -36,7 +36,11 @@ export async function sendPasswordResetEmail(opts: ResetEmailOpts): Promise<void
     </div>
   `;
 
-  if (!process.env.RESEND_API_KEY) {
+  const apiKey = await getPlatformSetting("email.resend_api_key");
+  const from =
+    (await getPlatformSetting("email.from")) ?? `${BRAND.name} <${BRAND.email.noReply}>`;
+
+  if (!apiKey) {
     console.log(
       `[auth-email][sim] Reset password → ${opts.to}\n  URL: ${opts.resetUrl}`,
     );
@@ -47,10 +51,10 @@ export async function sendPasswordResetEmail(opts: ResetEmailOpts): Promise<void
     const res = await fetch(RESEND_ENDPOINT, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ from: FROM, to: opts.to, subject, html }),
+      body: JSON.stringify({ from, to: opts.to, subject, html }),
     });
     if (!res.ok) {
       const body = await res.text().catch(() => "");

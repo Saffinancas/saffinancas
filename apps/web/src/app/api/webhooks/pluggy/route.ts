@@ -3,6 +3,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { db, schema } from "@cofre/db";
 import { id as genId } from "@/lib/ids";
+import { getPlatformSetting } from "@/lib/platform-settings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,8 +32,8 @@ type PluggyEvent = {
   triggeredBy?: string;
 };
 
-function verifySignature(raw: string, signatureHeader: string | null): boolean {
-  const secret = process.env.PLUGGY_WEBHOOK_SECRET;
+async function verifySignature(raw: string, signatureHeader: string | null): Promise<boolean> {
+  const secret = await getPlatformSetting("pluggy.webhook_secret");
   if (!secret) {
     // Sem secret configurado:
     //  - prod: rejeita (fail-closed)
@@ -58,7 +59,7 @@ export async function POST(req: Request) {
   const signature =
     req.headers.get("x-pluggy-signature") ?? req.headers.get("pluggy-signature");
 
-  if (!verifySignature(raw, signature)) {
+  if (!(await verifySignature(raw, signature))) {
     return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
   }
 

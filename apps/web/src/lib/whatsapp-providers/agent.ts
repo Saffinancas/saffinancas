@@ -35,7 +35,8 @@ export async function runAgent(params: {
   timezone?: string;
   senderName?: string | null;
 }): Promise<string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const { getPlatformSetting } = await import("@/lib/platform-settings");
+  const apiKey = await getPlatformSetting("ai.anthropic_api_key");
   if (!apiKey) return "Desculpe, IA não configurada.";
   const client = new Anthropic({ apiKey });
   const tz = params.timezone ?? "America/Sao_Paulo";
