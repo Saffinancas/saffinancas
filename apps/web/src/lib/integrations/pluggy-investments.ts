@@ -1,27 +1,20 @@
 "use server";
 
 /**
- * Pluggy Investments — adapter STUB.
+ * Pluggy Investments — usa o connect-token com `products: ['INVESTMENTS']` pra
+ * abrir o widget já filtrado pra corretoras. O sync das posições acontece em
+ * `pluggy.ts::syncInvestmentsForItem`, chamado automaticamente por
+ * `registerConnectedItem` depois que o user conecta.
  *
- * Quando você plugar `PLUGGY_CLIENT_ID` e `PLUGGY_CLIENT_SECRET` no .env:
- *
- *  - createInvestmentConnectToken: chama POST /connect_tokens com escopo
- *    `INVESTMENTS` na API do Pluggy.
- *  - syncInvestments(itemId): puxa via GET /investments?itemId=... TODAS as
- *    posições (ações, FIIs, ETFs, renda fixa, fundos) de TODAS as corretoras
- *    conectadas e faz UPSERT em `holdings` (chave: family_id + ticker + brokerage).
- *  - syncDividends(itemId): GET /investments/{id}/transactions filtrando
- *    por type=DIVIDEND/JCP/RENT e gera registros em `dividends`. Cada um com
- *    status='received' e linkedTransactionId já criado.
- *
- * Cobertura de corretoras (lista oficial Pluggy):
- *   B3 via XP, Rico, Clear, BTG Pactual, NuInvest, Inter Invest, Itaú,
- *   Bradesco, Warren, Modalmais — cobre 95%+ do mercado retail BR.
+ * Cobertura de corretoras (lista Pluggy): XP, Rico, Clear, BTG, NuInvest,
+ * Inter Invest, Itaú, Bradesco, Warren, Modalmais.
  *
  * Reference: https://docs.pluggy.ai/docs/investments
  */
+import { createConnectToken, pluggyMode } from "@/lib/pluggy";
+
 export async function isPluggyConfigured(): Promise<boolean> {
-  return !!process.env.PLUGGY_CLIENT_ID && !!process.env.PLUGGY_CLIENT_SECRET;
+  return (await pluggyMode()) === "real";
 }
 
 export async function createInvestmentConnectToken(): Promise<
@@ -30,12 +23,8 @@ export async function createInvestmentConnectToken(): Promise<
   if (!(await isPluggyConfigured())) {
     return {
       ok: false,
-      error:
-        "Pluggy não configurado. Adicione PLUGGY_CLIENT_ID e PLUGGY_CLIENT_SECRET no .env",
+      error: "Pluggy não configurado. Configure em Admin → Integrações.",
     };
   }
-  return {
-    ok: false,
-    error: "Integração real entra na Fase 3. Por ora, registre manualmente.",
-  };
+  return createConnectToken({ products: ["INVESTMENTS"] });
 }

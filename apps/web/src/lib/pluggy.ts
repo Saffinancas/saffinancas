@@ -94,15 +94,19 @@ export async function pluggyMode(): Promise<"sim" | "real"> {
 /**
  * Pede um connect_token pro widget abrir. Token é específico do user e
  * tem validade curta (~30min).
+ *
+ * `products` mapeia pros produtos do Pluggy: ACCOUNTS, CREDIT_CARDS,
+ * TRANSACTIONS, INVESTMENTS, IDENTITY, LOANS. Default = contas + transações.
  */
-export async function createConnectToken(): Promise<
-  { ok: true; token: string } | { ok: false; error: string }
-> {
+export async function createConnectToken(
+  opts?: { products?: string[] },
+): Promise<{ ok: true; token: string } | { ok: false; error: string }> {
   try {
     await familyId();
+    const body = opts?.products?.length ? { options: { products: opts.products } } : {};
     const json = await pluggyFetch<{ accessToken: string }>("/connect_token", {
       method: "POST",
-      body: JSON.stringify({}),
+      body: JSON.stringify(body),
     });
     return { ok: true, token: json.accessToken };
   } catch (err) {
@@ -194,8 +198,17 @@ export async function registerConnectedItem(
     // Sync transactions (últimos 90 dias)
     await syncTransactionsForItem(itemId, finalConnId, fid);
 
+    // Sync investimentos (se o item tem produto INVESTMENTS habilitado).
+    // Best-effort: se não tem ou der erro, segue.
+    try {
+      await syncInvestmentsForItem(itemId, fid);
+    } catch (err) {
+      console.warn("[pluggy] sync de investimentos falhou (ok ignorar)", err);
+    }
+
     revalidatePath("/app/contas");
     revalidatePath("/app/transacoes");
+    revalidatePath("/app/investimentos");
     revalidatePath("/app");
     return { ok: true, connectionId: finalConnId };
   } catch (err) {
@@ -296,6 +309,96 @@ async function syncTransactionsForItem(
     .update(schema.bankConnections)
     .set({ lastSyncedAt: new Date(), updatedAt: new Date() })
     .where(eq(schema.bankConnections.id, connectionId));
+}
+
+// --- Investimentos ---------------------------------------------------------
+
+type PluggyInvestment = {
+  id: string;
+  itemId: string;
+  type?: string;
+  subtype?: string | null;
+  name: string;
+  code?: string | null;
+  ticker?: string | null;
+  isin?: string | null;
+  quantity?: number | null;
+  balance?: number | null;
+  amount?: number | null;
+  amountOriginal?: number | null;
+  value?: number | null;
+  currencyCode?: string;
+  institution?: { name?: string };
+};
+
+function mapAssetClass(
+  p: PluggyInvestment,
+): "stock" | "fii" | "etf" | "fixed_income" | "fund" | "other" {
+  const t = (p.type ?? "").toUpperCase();
+  const s = (p.subtype ?? "").toUpperCase();
+  if (t === "EQUITY" || s.includes("STOCK")) return "stock";
+  if (s.includes("FII") || s.includes("REIT") || s.includes("REAL_ESTATE")) return "fii";
+  if (s.includes("ETF")) return "etf";
+  if (
+    t === "FIXED_INCOME" ||
+    s.includes("CDB") ||
+    s.includes("LCI") ||
+    s.includes("LCA") ||
+    s.includes("TESOURO")
+  )
+    return "fixed_income";
+  if (t === "MUTUAL_FUND" || s.includes("FUND")) return "fund";
+  return "other";
+}
+
+function mapBrokerage(name: string | undefined): string {
+  const n = (name ?? "").toLowerCase();
+  if (n.includes("xp")) return "xp";
+  if (n.includes("rico")) return "rico";
+  if (n.includes("clear")) return "clear";
+  if (n.includes("btg")) return "btg";
+  if (n.includes("nu invest") || n.includes("nuinvest")) return "nuinvest";
+  if (n.includes("inter")) return "inter";
+  if (n.includes("itau") || n.includes("itaú")) return "itau";
+  if (n.includes("bradesco")) return "bradesco";
+  if (n.includes("warren")) return "warren";
+  if (n.includes("modalmais") || n.includes("modal")) return "modalmais";
+  return "other";
+}
+
+async function syncInvestmentsForItem(itemId: string, familyId: string): Promise<void> {
+  let json: { results: PluggyInvestment[]; total?: number; totalPages?: number };
+  try {
+    json = await pluggyFetch(`/investments?itemId=${itemId}`);
+  } catch {
+    return; // item não tem produto INVESTMENTS — segue silencioso
+  }
+  if (!json.results?.length) return;
+
+  for (const inv of json.results) {
+    const ticker = (inv.ticker ?? inv.code ?? inv.isin ?? inv.name).slice(0, 16);
+    const qty = inv.quantity ?? 0;
+    const balance = inv.balance ?? inv.amount ?? inv.value ?? 0;
+    const avgCost = qty > 0 ? balance / qty : balance;
+    await db
+      .insert(schema.holdings)
+      .values({
+        id: genId("hd"),
+        familyId,
+        assetClass: mapAssetClass(inv),
+        ticker,
+        name: inv.name,
+        brokerage: mapBrokerage(inv.institution?.name) as never,
+        quantity: String(qty),
+        avgCostCents: Math.round(avgCost * 100),
+        currentPriceCents: balance > 0 && qty > 0 ? Math.round((balance / qty) * 100) : null,
+        currency: inv.currencyCode || "BRL",
+        pluggyAccountId: inv.itemId,
+        pluggyAssetId: inv.id,
+        lastSyncedAt: new Date(),
+      })
+      .onConflictDoNothing();
+  }
 }
 
 /** Sync manual de uma conexão existente. */

@@ -1294,6 +1294,7 @@ export const webhookEvents = pgTable(
     receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
     processedAt: timestamp("processed_at", { withTimezone: true }),
     error: text("error"),
+    attempts: integer("attempts").notNull().default(0),
   },
   (t) => ({
     providerEventUnique: uniqueIndex("webhook_events_provider_event_unique").on(
