@@ -139,7 +139,7 @@ export function ContasClient({
     <div className="space-y-6">
       {/* Carrega o script do Pluggy só uma vez */}
       <Script
-        src="https://cdn.pluggy.ai/pluggy-connect/v2.13.0/pluggy-connect.js"
+        src="https://cdn.pluggy.ai/pluggy-connect/latest/pluggy-connect.js"
         strategy="afterInteractive"
         onReady={() => setPluggyReady(true)}
         onLoad={() => setPluggyReady(true)}
