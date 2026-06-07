@@ -64,10 +64,13 @@ export async function saveWhatsappConfig(input: SaveProviderInput): Promise<{ ok
         });
       }
       if (input.twilio?.from) {
-        const from = input.twilio.from.startsWith("whatsapp:")
-          ? input.twilio.from
-          : `whatsapp:${input.twilio.from}`;
-        await setPlatformSetting("whatsapp.twilio.from", from, { updatedByUserId: userId });
+        // Twilio rejeita "From" com espaços/parênteses/hífens (code 21212).
+        // Mantém só "+digits" e prefixa "whatsapp:".
+        const digits = input.twilio.from.replace(/[\s()-]/g, "");
+        const clean = digits.startsWith("whatsapp:") ? digits : `whatsapp:${digits}`;
+        await setPlatformSetting("whatsapp.twilio.from", clean, {
+          updatedByUserId: userId,
+        });
       }
       if (input.twilio?.joinCode) {
         await setPlatformSetting(
