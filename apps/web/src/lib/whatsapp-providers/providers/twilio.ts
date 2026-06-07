@@ -75,12 +75,14 @@ export const twilioSandboxProvider: WhatsappProvider = {
 export const twilioProductionProvider: WhatsappProvider = {
   id: "twilio_production",
   capabilities: {
-    supportsGroups: true,
+    // Twilio WhatsApp Business API NÃO suporta grupos (limitação da Twilio).
+    // Pra capturar mensagens de grupo da família, use o provider `web_js`.
+    supportsGroups: false,
     needsQrPairing: false,
     receivesViaWebhook: true,
     canSendMessages: true,
     pairingInstructions:
-      "Adicione o número do Saf Bot no grupo da família. Depois envie `vincular <CÓDIGO>` no grupo.",
+      "Mande WhatsApp pro número Saf com `vincular <CÓDIGO>`. O Twilio só suporta DM 1:1 — pra grupos use o provider WhatsApp Web.",
   },
   sendMessage: twilioSend,
   getBotIdentifier: botIdentifier,
