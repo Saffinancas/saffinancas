@@ -49,9 +49,10 @@ export async function GET(): Promise<Response> {
   let senders: unknown = null;
   let sendersError: string | null = null;
   try {
-    const r = await fetch("https://messaging.twilio.com/v2/Channels/Senders", {
-      headers: { Authorization: authHeader },
-    });
+    const r = await fetch(
+      "https://messaging.twilio.com/v2/Channels/Senders?Channel=whatsapp",
+      { headers: { Authorization: authHeader } },
+    );
     const j = await r.json();
     senders = r.ok ? j : null;
     if (!r.ok) sendersError = `${r.status}: ${JSON.stringify(j)}`;
