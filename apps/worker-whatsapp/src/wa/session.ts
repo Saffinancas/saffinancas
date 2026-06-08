@@ -69,6 +69,8 @@ export class WaSession {
           "--disable-gpu",
         ],
       },
+      // pairWithPhoneNumber permite gerar pairing code de 8 dígitos
+      // (alternativa ao QR) — habilitamos via requestPairingCode().
     });
 
     this.client.on("qr", async (qr: string) => {
@@ -123,10 +125,52 @@ export class WaSession {
   }
 
   /**
-   * Só repassa mensagens do grupo monitorado pra fila. Mensagens 1:1, status,
-   * outros grupos — ignorados.
+   * Roteamento de mensagens.
+   *
+   *  - Sessão Saf global: escuta TODOS os grupos onde o número Saf está. Faz
+   *    lookup da família via `whatsapp_group_links` pelo `externalChatId`.
+   *    Mensagem sem família vinculada → ainda é enfileirada com `familyId =
+   *    'saf-global'` pro consumer reconhecer comando `vincular CODIGO` e
+   *    materializar o link.
+   *  - Sessão por família: comportamento antigo — só repassa mensagens do
+   *    grupo monitorado.
    */
   private async handleIncomingMessage(msg: Message): Promise<void> {
+    if (!msg.body || msg.body.length === 0) return;
+
+    const isSafGlobal = this.familyId === SAF_GLOBAL_ID;
+    const isGroup = msg.from.endsWith("@g.us");
+
+    if (isSafGlobal) {
+      // Saf só escuta grupos (DMs ignoradas).
+      if (!isGroup) return;
+
+      let resolvedFamilyId: string | null = null;
+      try {
+        const [link] = await db
+          .select({ familyId: schema.whatsappGroupLinks.familyId })
+          .from(schema.whatsappGroupLinks)
+          .where(eq(schema.whatsappGroupLinks.externalChatId, msg.from))
+          .limit(1);
+        resolvedFamilyId = link?.familyId ?? null;
+      } catch (err) {
+        log.error({ err }, "lookup group link falhou");
+      }
+
+      const contact = await msg.getContact().catch(() => null);
+      await enqueueMessage({
+        familyId: resolvedFamilyId ?? SAF_GLOBAL_ID,
+        waMessageId: msg.id._serialized,
+        waChatId: msg.from,
+        senderPhone: contact?.number ? `+${contact.number}` : msg.author ?? msg.from,
+        senderName: contact?.pushname ?? contact?.name ?? null,
+        body: msg.body,
+        mediaType: msg.hasMedia ? msg.type : null,
+        receivedAt: new Date(msg.timestamp * 1000).toISOString(),
+      });
+      return;
+    }
+
     const [session] = await db
       .select({ groupId: schema.whatsappSessions.monitoredGroupId })
       .from(schema.whatsappSessions)
@@ -134,24 +178,7 @@ export class WaSession {
       .limit(1);
 
     const monitored = session?.groupId;
-    log.info(
-      {
-        familyId: this.familyId,
-        from: msg.from,
-        to: msg.to,
-        fromMe: msg.fromMe,
-        type: msg.type,
-        bodyLen: msg.body?.length ?? 0,
-        bodyPreview: msg.body?.slice(0, 50),
-        monitored,
-        match: msg.from === monitored,
-      },
-      "msg recebida",
-    );
-
-    if (!monitored) return;
-    if (msg.from !== monitored) return;
-    if (!msg.body || msg.body.length === 0) return;
+    if (!monitored || msg.from !== monitored) return;
 
     const contact = await msg.getContact().catch(() => null);
     await enqueueMessage({
@@ -164,6 +191,39 @@ export class WaSession {
       mediaType: msg.hasMedia ? msg.type : null,
       receivedAt: new Date(msg.timestamp * 1000).toISOString(),
     });
+  }
+
+  /** Envia mensagem texto pra um chat (grupo ou DM). */
+  async sendText(to: string, body: string): Promise<void> {
+    if (!this.client) throw new Error("Sessão não iniciada.");
+    await this.client.sendMessage(to, body);
+  }
+
+  /**
+   * Gera um pairing code de 8 caracteres pra parear via "Linked Devices →
+   * Vincular com número de telefone" no app WhatsApp.
+   *
+   * Espera o cliente estar inicializado (ou inicializa). Telefone em formato
+   * só dígitos com DDI (ex.: "5531999999999").
+   */
+  async requestPairingCode(phoneE164: string): Promise<string> {
+    if (!this.client) await this.start();
+    if (!this.client) throw new Error("Cliente não pôde ser inicializado.");
+    const digits = phoneE164.replace(/\D/g, "");
+    if (!digits || digits.length < 10) {
+      throw new Error("Telefone inválido — use formato +5531999999999.");
+    }
+    // whatsapp-web.js expõe requestPairingCode no Client (v1.27+).
+    const c = this.client as unknown as { requestPairingCode: (n: string, show?: boolean) => Promise<string> };
+    if (typeof c.requestPairingCode !== "function") {
+      throw new Error(
+        "Esta versão de whatsapp-web.js não expõe requestPairingCode. Atualize a lib.",
+      );
+    }
+    const code = await c.requestPairingCode(digits, false);
+    this.state.status = "qr_pending";
+    await this.persist();
+    return code;
   }
 
   async listGroups(): Promise<Array<{ id: string; name: string; participants: number }>> {
@@ -199,6 +259,9 @@ export class WaSession {
   }
 
   private async persist(): Promise<void> {
+    // Sessão Saf global não tem família real — estado fica só em memória.
+    if (this.familyId === SAF_GLOBAL_ID) return;
+
     const now = new Date();
     const statusMap: Record<SessionStatus, "qr_pending" | "connected" | "disconnected" | "unpaired" | "banned"> = {
       initializing: "unpaired",
@@ -230,3 +293,10 @@ export class WaSession {
       .where(eq(schema.whatsappSessions.familyId, this.familyId));
   }
 }
+
+/**
+ * ID especial para a sessão global Saf — número operacional da plataforma
+ * que entra em todos os grupos das famílias clientes. Não persiste em
+ * whatsapp_sessions (não tem família associada).
+ */
+export const SAF_GLOBAL_ID = "saf-global";

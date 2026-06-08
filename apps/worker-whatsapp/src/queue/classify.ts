@@ -8,6 +8,10 @@ import {
 } from "@cofre/ai";
 import { log } from "../log.js";
 import type { ClassifyJob } from "./enqueue.js";
+import { sessionManager } from "../wa/manager.js";
+import { SAF_GLOBAL_ID } from "../wa/session.js";
+
+const LINK_CMD = /^vincular\s+([A-Za-z0-9]{4,8})/i;
 
 const AVG_INPUT_TOKENS = 480;
 const AVG_OUTPUT_TOKENS = 130;
@@ -38,6 +42,14 @@ function dedupHash(familyId: string, draft: TransactionDraft, occurredAt: Date):
  * transação (se for transação) + ai_usage_events.
  */
 export async function processClassifyJob(job: ClassifyJob): Promise<void> {
+  // Saf global: mensagem chegou num grupo sem família vinculada. Trata comando
+  // `vincular CODIGO` pra materializar o link, ou ignora (próximas msgs do mesmo
+  // grupo serão re-enfileiradas com a família correta pelo lookup do session.ts).
+  if (job.familyId === SAF_GLOBAL_ID) {
+    await handleSafUnlinked(job);
+    return;
+  }
+
   // 1. carrega família
   const [family] = await db
     .select({
@@ -192,6 +204,89 @@ export async function processClassifyJob(job: ClassifyJob): Promise<void> {
     },
     "Transação criada",
   );
+}
+
+async function safReply(to: string, body: string): Promise<void> {
+  try {
+    const session = sessionManager.get(SAF_GLOBAL_ID);
+    if (!session) return;
+    await session.sendText(to, body);
+  } catch (err) {
+    log.warn({ err, to }, "Saf reply falhou");
+  }
+}
+
+async function handleSafUnlinked(job: ClassifyJob): Promise<void> {
+  const match = job.body.match(LINK_CMD);
+  if (!match) {
+    // Mensagem comum em grupo desconhecido. Responde uma vez (rate-limited via
+    // memória? por enquanto: responde sempre) explicando como vincular.
+    await safReply(
+      job.waChatId,
+      "Olá! Sou o Saf Finanças. Pra começar a capturar gastos desse grupo, alguém precisa pegar o código no app (menu WhatsApp) e mandar aqui: vincular SEU_CODIGO",
+    );
+    return;
+  }
+
+  const code = (match[1] ?? "").toUpperCase();
+  const [session] = await db
+    .select({
+      familyId: schema.whatsappSessions.familyId,
+      expiresAt: schema.whatsappSessions.linkCodeExpiresAt,
+    })
+    .from(schema.whatsappSessions)
+    .where(eq(schema.whatsappSessions.linkCode, code))
+    .limit(1);
+
+  if (!session) {
+    await safReply(job.waChatId, "Código inválido. Gere um novo no painel da Saf, menu WhatsApp.");
+    return;
+  }
+  if (session.expiresAt && session.expiresAt < new Date()) {
+    await safReply(job.waChatId, "Código expirado. Gere um novo no painel da Saf.");
+    return;
+  }
+
+  // Materializa o link (provider=web_js) e marca a sessão como connected.
+  await db
+    .insert(schema.whatsappGroupLinks)
+    .values({
+      id: `walk_${cryptoRandom()}`,
+      familyId: session.familyId,
+      provider: "web_js",
+      externalChatId: job.waChatId,
+      chatName: null,
+      isGroup: true,
+    })
+    .onConflictDoUpdate({
+      target: [schema.whatsappGroupLinks.provider, schema.whatsappGroupLinks.externalChatId],
+      set: {
+        familyId: session.familyId,
+        isGroup: true,
+        archivedAt: null,
+        linkedAt: new Date(),
+      },
+    });
+
+  await db
+    .update(schema.whatsappSessions)
+    .set({
+      status: "connected",
+      linkCode: null,
+      linkCodeExpiresAt: null,
+      monitoredGroupId: job.waChatId,
+      pairedPhone: job.senderPhone,
+      provider: "web_js",
+      lastSeenAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(schema.whatsappSessions.familyId, session.familyId));
+
+  await safReply(
+    job.waChatId,
+    "✓ Grupo vinculado à conta Saf! A partir de agora, mensagens com gasto viram transações automaticamente.",
+  );
+  log.info({ familyId: session.familyId, chatId: job.waChatId }, "Saf link estabelecido");
 }
 
 async function upsertMember(job: ClassifyJob): Promise<string> {

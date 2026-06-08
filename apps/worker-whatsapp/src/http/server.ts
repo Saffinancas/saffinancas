@@ -1,6 +1,7 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import { requireSharedSecret } from "./auth.js";
 import { sessionsRouter } from "./sessions.js";
+import { safSessionRouter } from "./saf-session.js";
 import { sessionManager } from "../wa/manager.js";
 import { log } from "../log.js";
 
@@ -18,6 +19,7 @@ export function buildApp(): Express {
   });
 
   app.use("/sessions", requireSharedSecret, sessionsRouter);
+  app.use("/saf-session", requireSharedSecret, safSessionRouter);
 
   app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
     log.error({ err, path: req.path }, "Erro na rota");
