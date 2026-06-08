@@ -3,10 +3,23 @@
 import * as React from "react";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, RefreshCcw, Unlink, Wallet, AlertCircle, CreditCard } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  RefreshCcw,
+  Unlink,
+  Wallet,
+  AlertCircle,
+  CreditCard,
+  Landmark,
+  ArrowUpRight,
+  ArrowDownRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader, StatCard, Section } from "@/components/ui/page-header";
+import { BentoCard } from "@/components/ui/bento";
 import { syncBankConnection, disconnectBank, type BankView } from "@/lib/pluggy";
 import { formatBRL } from "@/lib/utils";
 
@@ -134,9 +147,12 @@ export function ContasClient({
     (acc, b) => acc + b.accounts.reduce((s, a) => s + (a.balanceCents ?? 0), 0),
     0,
   );
+  const accountCount = initial.reduce((acc, b) => acc + b.accounts.length, 0);
+  const activeCount = initial.filter((b) => b.status === "active").length;
+  const errorCount = initial.filter((b) => b.status === "error").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Carrega o script do Pluggy só uma vez */}
       <Script
         src="https://cdn.pluggy.ai/pluggy-connect/latest/pluggy-connect.js"
@@ -148,26 +164,30 @@ export function ContasClient({
         }
       />
 
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Contas bancárias</h1>
-          <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
-            Conecte via Open Finance pra ver saldo e extrato em tempo real.
-          </p>
-        </div>
-        <Button
-          onClick={openPluggyWidget}
-          disabled={!pluggyEnabled || openingWidget || !pluggyReady}
-          title={!pluggyReady ? "Aguarde — SDK do Pluggy carregando" : undefined}
-        >
-          {openingWidget || !pluggyReady ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Plus className="h-4 w-4" />
-          )}
-          {!pluggyReady ? "Carregando..." : "Conectar banco"}
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Plataforma · Contas"
+        title={
+          <>
+            Bancos no <span className="display-serif italic">piloto automático</span>
+          </>
+        }
+        description="Conecte via Open Finance pra ver saldo e extrato em tempo real. Sync dos últimos 90 dias é automático."
+        actions={
+          <Button
+            onClick={openPluggyWidget}
+            disabled={!pluggyEnabled || openingWidget || !pluggyReady}
+            title={!pluggyReady ? "Aguarde — SDK do Pluggy carregando" : undefined}
+          >
+            {openingWidget || !pluggyReady ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+            {!pluggyReady ? "Carregando..." : "Conectar banco"}
+          </Button>
+        }
+        tone="primary"
+      />
 
       {!pluggyEnabled && (
         <div className="flex items-start gap-3 rounded-[var(--radius)] border border-[var(--color-warning)]/30 bg-[var(--color-warning-soft)] p-3 text-xs text-[var(--color-warning)]">
@@ -187,45 +207,100 @@ export function ContasClient({
       )}
 
       {initial.length === 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Wallet className="h-5 w-5 text-[var(--color-primary)]" />
-              Nenhum banco conectado
-            </CardTitle>
-            <CardDescription>
-              Clique em &ldquo;Conectar banco&rdquo; e escolha Nubank, Itaú, Inter, BB ou outro.
-              Sync dos últimos 90 dias automático.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-10 text-center shadow-soft">
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[var(--color-primary-soft)] text-[var(--color-primary)]">
+            <Wallet className="h-6 w-6" />
+          </span>
+          <h3 className="mt-4 text-lg font-semibold tracking-tight">Nenhum banco conectado</h3>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-[var(--color-fg-muted)]">
+            Clique em &ldquo;Conectar banco&rdquo; e escolha Nubank, Itaú, Inter, BB ou outro. Sync
+            dos últimos 90 dias automático.
+          </p>
+        </div>
       ) : (
         <>
-          <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-            <p className="text-[10px] uppercase tracking-wider text-[var(--color-fg-subtle)]">
-              Saldo total
-            </p>
-            <p
-              className={
-                "num mt-1 text-2xl font-semibold " +
-                (totalBalance >= 0 ? "text-[var(--color-income)]" : "text-[var(--color-expense)]")
+          <div className="grid auto-rows-[minmax(120px,_auto)] grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            <BentoCard
+              span="col-span-2 lg:row-span-2"
+              tone={totalBalance >= 0 ? "income" : "expense"}
+              eyebrow="Saldo total"
+              metric={
+                <span className="num">
+                  <span className="text-base font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                    R$
+                  </span>
+                  {(Math.abs(totalBalance) / 100).toLocaleString("pt-BR", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
+              }
+              footnote={
+                <span className="inline-flex items-center gap-1.5">
+                  {totalBalance >= 0 ? (
+                    <ArrowUpRight className="h-3 w-3 text-[var(--color-income)]" />
+                  ) : (
+                    <ArrowDownRight className="h-3 w-3 text-[var(--color-expense)]" />
+                  )}
+                  <span>
+                    consolidado em {initial.length}{" "}
+                    {initial.length === 1 ? "banco" : "bancos"}
+                  </span>
+                </span>
               }
             >
-              {formatBRL(totalBalance)}
-            </p>
+              <p className="mt-2 text-[11px] text-[var(--color-fg-subtle)]">
+                {accountCount} {accountCount === 1 ? "conta" : "contas"} sincronizadas
+              </p>
+            </BentoCard>
+
+            <StatCard
+              tone="primary"
+              label="Bancos conectados"
+              value={<span className="num">{initial.length}</span>}
+              icon={<Landmark className="h-4 w-4 text-[var(--color-primary)]" />}
+              trend={`${activeCount} ${activeCount === 1 ? "ativo" : "ativos"}`}
+            />
+
+            <StatCard
+              tone={errorCount > 0 ? "expense" : "default"}
+              label="Status"
+              value={
+                <span className="num">
+                  {errorCount > 0 ? errorCount : activeCount}
+                  <span className="ml-1 text-sm font-normal text-[var(--color-fg-muted)]">
+                    {errorCount > 0 ? "com erro" : "ok"}
+                  </span>
+                </span>
+              }
+              icon={
+                errorCount > 0 ? (
+                  <AlertCircle className="h-4 w-4 text-[var(--color-expense)]" />
+                ) : (
+                  <CreditCard className="h-4 w-4" />
+                )
+              }
+              trend={
+                errorCount > 0
+                  ? "verifique os bancos abaixo"
+                  : "todos sincronizando"
+              }
+            />
           </div>
 
-          <div className="space-y-4">
-            {initial.map((b) => (
-              <BankCard
-                key={b.id}
-                bank={b}
-                busy={busy === b.id || busy === "register"}
-                onSync={() => handleSync(b.id)}
-                onDisconnect={() => handleDisconnect(b.id, b.institutionName)}
-              />
-            ))}
-          </div>
+          <Section eyebrow="Conexões" title="Bancos sincronizados">
+            <div className="space-y-4">
+              {initial.map((b) => (
+                <BankCard
+                  key={b.id}
+                  bank={b}
+                  busy={busy === b.id || busy === "register"}
+                  onSync={() => handleSync(b.id)}
+                  onDisconnect={() => handleDisconnect(b.id, b.institutionName)}
+                />
+              ))}
+            </div>
+          </Section>
         </>
       )}
     </div>

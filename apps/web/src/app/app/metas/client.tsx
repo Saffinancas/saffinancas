@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader, StatCard } from "@/components/ui/page-header";
+import { ProgressRing } from "@/components/ui/bento";
 import {
   Dialog,
   DialogContent,
@@ -29,19 +31,100 @@ export function MetasClient({ initial }: { initial: Goal[] }) {
   const [openAdd, setOpenAdd] = React.useState(false);
   const [openDeposit, setOpenDeposit] = React.useState<Goal | null>(null);
 
+  const totals = React.useMemo(() => {
+    let saved = 0;
+    let target = 0;
+    let reached = 0;
+    for (const g of initial) {
+      saved += g.savedCents;
+      target += g.targetCents;
+      if (g.savedCents >= g.targetCents) reached += 1;
+    }
+    const pct = target > 0 ? (saved / target) * 100 : 0;
+    return { saved, target, reached, pct, count: initial.length };
+  }, [initial]);
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Metas</h1>
-          <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
-            Reserve dinheiro pra coisas concretas — viagem, carro, casa, escola.
-          </p>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Plataforma · Metas"
+        title={
+          <>
+            Dinheiro com <span className="display-serif italic">propósito</span>
+          </>
+        }
+        description="Reserve grana pra coisas concretas — viagem, carro, casa, escola. A gente projeta quanto falta no ritmo atual."
+        actions={
+          <Button onClick={() => setOpenAdd(true)}>
+            <Plus className="h-4 w-4" /> Nova meta
+          </Button>
+        }
+      />
+
+      {initial.length > 0 && (
+        <div className="grid auto-rows-[minmax(120px,_auto)] grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          <StatCard
+            tone="primary"
+            label="Guardado"
+            value={
+              <span className="num">
+                <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                  R$
+                </span>
+                {(totals.saved / 100).toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+            }
+            trend={`de ${formatBRL(totals.target)} totais`}
+            chart={
+              totals.target > 0 ? (
+                <div className="flex items-center justify-end">
+                  <ProgressRing value={totals.pct} label="meta" size={72} />
+                </div>
+              ) : undefined
+            }
+          />
+          <StatCard
+            tone="income"
+            label="Metas atingidas"
+            value={
+              <span className="num">
+                {totals.reached}
+                <span className="text-base font-normal text-[var(--color-fg-muted)] ml-1">
+                  / {totals.count}
+                </span>
+              </span>
+            }
+            trend={totals.reached === totals.count ? "todas concluídas" : "em progresso"}
+            icon={<Target className="h-4 w-4" />}
+          />
+          <StatCard
+            tone="default"
+            label="Falta"
+            value={
+              <span className="num">
+                <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                  R$
+                </span>
+                {(Math.max(0, totals.target - totals.saved) / 100).toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+            }
+            trend="pra fechar todas as metas"
+          />
+          <StatCard
+            tone="warning"
+            label="Progresso"
+            value={<span className="num">{Math.round(totals.pct)}%</span>}
+            trend="média ponderada por valor"
+            icon={<TrendingUp className="h-4 w-4" />}
+          />
         </div>
-        <Button onClick={() => setOpenAdd(true)}>
-          <Plus className="h-4 w-4" /> Nova meta
-        </Button>
-      </div>
+      )}
 
       {initial.length === 0 ? (
         <Card>

@@ -21,6 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PageHeader, Section } from "@/components/ui/page-header";
 import { formatBRL } from "@/lib/utils";
 import {
   IR_BUCKET_INFO,
@@ -89,22 +90,26 @@ export function IRDashboard({
     URL.revokeObjectURL(url);
   }
 
+  const heroTone: "income" | "expense" | "primary" =
+    willRefund ? "income" : refundCents < 0 ? "expense" : "primary";
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Imposto de Renda · ano-calendário {report.year}
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
-            Pré-prévia da sua declaração {declarationYear}. Estimativa baseada nas suas
-            transações registradas — não substitui contador.
-          </p>
-        </div>
-        <Button variant="secondary" onClick={exportJson}>
-          <Download className="h-4 w-4" /> Exportar JSON
-        </Button>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow={`Plataforma · Imposto de Renda ${report.year}`}
+        title={
+          <>
+            Sua prévia da <span className="display-serif italic">declaração</span> {declarationYear}
+          </>
+        }
+        description="Estimativa baseada nas suas transações registradas — não substitui contador."
+        tone={heroTone}
+        actions={
+          <Button variant="secondary" onClick={exportJson}>
+            <Download className="h-4 w-4" /> Exportar JSON
+          </Button>
+        }
+      />
 
       {/* Banner principal — restituição estimada */}
       <Card
@@ -210,12 +215,12 @@ export function IRDashboard({
       </Card>
 
       {/* Deduções */}
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight">Pagamentos dedutíveis</h2>
-        <p className="text-sm text-[var(--color-fg-muted)]">
-          Clique pra ver quanto cada categoria reduz o seu IR.
-        </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <Section
+        eyebrow="Deduções"
+        title="Pagamentos dedutíveis"
+        description="Clique pra ver quanto cada categoria reduz o seu IR."
+      >
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {deductibleBuckets.map((b) => {
             const info = IR_BUCKET_INFO[b];
             const data = report.deductions[b];
@@ -279,7 +284,7 @@ export function IRDashboard({
             );
           })}
         </div>
-      </div>
+      </Section>
 
       {/* Bens e direitos */}
       <Card>

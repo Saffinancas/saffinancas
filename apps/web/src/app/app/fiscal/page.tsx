@@ -8,6 +8,7 @@ import { summaryForFamily, listReceivables } from "@/lib/fiscal/invoices";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PageHeader, StatCard, Section } from "@/components/ui/page-header";
 import {
   ArrowRight,
   FileText,
@@ -31,13 +32,17 @@ export default async function FiscalPage() {
 
   if (!profile) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Fiscal · NFSe</h1>
-          <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
-            Emita e gerencie notas fiscais de serviço direto da plataforma.
-          </p>
-        </div>
+      <div className="space-y-8">
+        <PageHeader
+          eyebrow="Plataforma · Fiscal"
+          title={
+            <>
+              Suas notas <span className="display-serif italic">fiscais</span>
+            </>
+          }
+          description="Emita e gerencie notas fiscais de serviço direto da plataforma."
+          tone="primary"
+        />
         <Card className="border-dashed">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -99,27 +104,31 @@ export default async function FiscalPage() {
   const hasFirstInvoice = recent.some((r) => r.status === "issued");
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Fiscal · NFSe</h1>
-          <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
-            {profile.legalName} · {PROVIDER_LABEL[profile.preferredProvider]} · {profile.environment === "producao" ? "Produção" : "Homologação"}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild>
-            <Link href="/app/fiscal/emitir">
-              <Plus className="h-4 w-4" /> Emitir NFSe
-            </Link>
-          </Button>
-          <Button asChild variant="secondary">
-            <Link href="/app/fiscal/notas">
-              <FileText className="h-4 w-4" /> Todas as notas
-            </Link>
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Plataforma · Fiscal"
+        title={
+          <>
+            Suas notas <span className="display-serif italic">fiscais</span>
+          </>
+        }
+        description={`${profile.legalName} · ${PROVIDER_LABEL[profile.preferredProvider]} · ${profile.environment === "producao" ? "Produção" : "Homologação"}`}
+        tone="primary"
+        actions={
+          <>
+            <Button asChild>
+              <Link href="/app/fiscal/emitir">
+                <Plus className="h-4 w-4" /> Emitir NFSe
+              </Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/app/fiscal/notas">
+                <FileText className="h-4 w-4" /> Todas as notas
+              </Link>
+            </Button>
+          </>
+        }
+      />
 
       {profile.preferredProvider === "sim" && (
         <div className="flex items-start gap-3 rounded-[var(--radius)] border border-[var(--color-warning)]/30 bg-[var(--color-warning-soft)] p-3 text-xs text-[var(--color-warning)]">
@@ -139,15 +148,28 @@ export default async function FiscalPage() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-4">
-        <Stat label="Notas no mês" value={summary.month.count} />
-        <Stat label="Faturado no mês" value={formatBRL(summary.month.total)} tone="primary" />
-        <Stat label="ISS no mês" value={formatBRL(summary.month.iss)} tone="expense" />
-        <Stat
-          label={`Faturado em ${new Date().getFullYear()}`}
-          value={formatBRL(summary.year.total)}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatCard
+          tone="default"
+          label="Notas no mês"
+          value={<span className="num tabular">{summary.month.count}</span>}
+        />
+        <StatCard
+          tone="primary"
+          label="Faturado no mês"
+          value={<span className="num tabular">{formatBRL(summary.month.total)}</span>}
+          icon={<FileText className="h-4 w-4" />}
+        />
+        <StatCard
+          tone="expense"
+          label="ISS no mês"
+          value={<span className="num tabular">{formatBRL(summary.month.iss)}</span>}
+        />
+        <StatCard
           tone="income"
-          hint={`${summary.year.count} nota(s)`}
+          label={`Faturado em ${new Date().getFullYear()}`}
+          value={<span className="num tabular">{formatBRL(summary.year.total)}</span>}
+          trend={`${summary.year.count} nota(s)`}
         />
       </div>
 
@@ -372,30 +394,3 @@ function StatusBadge({ status }: { status: string }) {
   return <Badge variant={map[status] ?? "default"}>{label[status] ?? status}</Badge>;
 }
 
-function Stat({
-  label,
-  value,
-  tone,
-  hint,
-}: {
-  label: string;
-  value: string | number;
-  tone?: "income" | "expense" | "primary";
-  hint?: string;
-}) {
-  const ac =
-    tone === "income"
-      ? "text-[var(--color-income)]"
-      : tone === "expense"
-        ? "text-[var(--color-expense)]"
-        : tone === "primary"
-          ? "text-[var(--color-primary)]"
-          : "text-[var(--color-fg)]";
-  return (
-    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-soft">
-      <p className="text-xs uppercase tracking-wider text-[var(--color-fg-subtle)]">{label}</p>
-      <p className={"display-serif tabular mt-2 text-2xl " + ac}>{value}</p>
-      {hint && <p className="mt-1 text-[10px] text-[var(--color-fg-subtle)]">{hint}</p>}
-    </div>
-  );
-}

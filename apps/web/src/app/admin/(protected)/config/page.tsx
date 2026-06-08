@@ -5,6 +5,7 @@ import {
   type SettingDef,
 } from "@/lib/platform-settings-registry";
 import { SettingsList, type SettingState } from "./settings-list";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -70,19 +71,22 @@ export default async function AdminConfigPage() {
     });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Configurações da plataforma</h1>
-        <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
-          Gerencie aqui todas as variáveis usadas pelo app. Valores salvos no banco
-          (criptografados, quando marcados como secret) sobrescrevem env vars equivalentes
-          em runtime — sem precisar editar <code>.env</code>.
-        </p>
-        <p className="mt-1 text-xs text-[var(--color-fg-subtle)]">
-          As marcadas como <strong>env-only</strong> são lidas no boot (DB, chave-mestra,
-          secret de sessão) e só podem ser alteradas na Vercel.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Plataforma · Configurações"
+        title={
+          <>
+            Variáveis da <span className="display-serif italic">plataforma</span>
+          </>
+        }
+        description="Valores salvos no banco (criptografados, quando marcados como secret) sobrescrevem env vars equivalentes em runtime — sem precisar editar .env."
+        tone="primary"
+      />
+
+      <p className="text-xs text-[var(--color-fg-subtle)]">
+        As marcadas como <strong>env-only</strong> são lidas no boot (DB, chave-mestra,
+        secret de sessão) e só podem ser alteradas na Vercel.
+      </p>
 
       <SettingsList registry={SETTINGS_REGISTRY} states={states} extras={extras} />
     </div>

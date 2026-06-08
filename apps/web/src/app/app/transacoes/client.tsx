@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader, StatCard } from "@/components/ui/page-header";
 import {
   Dialog,
   DialogContent,
@@ -57,18 +58,91 @@ export function TransactionsClient({ initialOpen, transactions, categories }: Pr
     setOpen(true);
   }
 
+  const totals = React.useMemo(() => {
+    let income = 0;
+    let expense = 0;
+    let pending = 0;
+    for (const t of transactions) {
+      if (t.status === "deleted") continue;
+      if (t.type === "income") income += t.amountCents;
+      else expense += t.amountCents;
+      if (t.status === "pending_review") pending += 1;
+    }
+    return { income, expense, balance: income - expense, pending, count: transactions.length };
+  }, [transactions]);
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Transações</h1>
-          <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
-            Tudo o que entrou e saiu. Clique pra editar, reclassificar ou apagar.
-          </p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4" /> Lançar
-        </Button>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Plataforma · Transações"
+        title={
+          <>
+            Tudo que <span className="display-serif italic">entrou e saiu</span>
+          </>
+        }
+        description="Clique numa linha pra editar, reclassificar ou apagar. A IA já fez o primeiro chute — você só refina."
+        actions={
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4" /> Lançar
+          </Button>
+        }
+      />
+
+      <div className="grid auto-rows-[minmax(120px,_auto)] grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatCard
+          tone={totals.balance >= 0 ? "income" : "expense"}
+          label="Saldo"
+          value={
+            <span className="num">
+              <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                R$
+              </span>
+              {(Math.abs(totals.balance) / 100).toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          }
+          trend={`considerando ${totals.count} lançamento${totals.count === 1 ? "" : "s"}`}
+        />
+        <StatCard
+          tone="income"
+          label="Receita"
+          value={
+            <span className="num">
+              <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                R$
+              </span>
+              {(totals.income / 100).toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          }
+          trend="somatório das entradas"
+        />
+        <StatCard
+          tone="expense"
+          label="Despesa"
+          value={
+            <span className="num">
+              <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                R$
+              </span>
+              {(totals.expense / 100).toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          }
+          trend="somatório das saídas"
+        />
+        <StatCard
+          tone={totals.pending > 0 ? "warning" : "default"}
+          label="A revisar"
+          value={<span className="num">{totals.pending}</span>}
+          trend={totals.pending === 0 ? "tudo confirmado" : "lançamentos pendentes"}
+        />
       </div>
 
       {transactions.length === 0 ? (

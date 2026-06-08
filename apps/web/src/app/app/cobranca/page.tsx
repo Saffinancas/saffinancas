@@ -1,3 +1,4 @@
+import * as React from "react";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
@@ -7,8 +8,10 @@ import { describeSubscription } from "@/lib/subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PageHeader, StatCard } from "@/components/ui/page-header";
+import { PulseDot } from "@/components/ui/bento";
 import { BRAND } from "@/lib/brand";
-import { CreditCard, Sparkles } from "lucide-react";
+import { CalendarClock, CreditCard, ShieldCheck, Sparkles } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -25,13 +28,74 @@ export default async function CobrancaPage() {
 
   const state = describeSubscription(sub);
 
+  const tone = toneForState(state.kind);
+  const statusLabel = humanStatus(state.kind);
+  const planPriceBRL = `R$ ${BRAND.pricing.monthlyBRL.toFixed(2).replace(".", ",")}`;
+  const nextBillingLabel =
+    state.kind === "active" && state.nextBillingAt
+      ? new Date(state.nextBillingAt).toLocaleDateString("pt-BR")
+      : state.kind === "trialing"
+        ? state.daysLeft === 0
+          ? "hoje"
+          : `em ${state.daysLeft} dia${state.daysLeft === 1 ? "" : "s"}`
+        : state.kind === "free"
+          ? "—"
+          : state.kind === "past_due"
+            ? "pendente"
+            : "—";
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Plano e cobrança</h1>
-        <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
-          Status da sua assinatura e como adicionar meio de pagamento.
-        </p>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Painel · Plano e cobrança"
+        title={
+          <>
+            Seu plano, sua{" "}
+            <span className="display-serif italic">tranquilidade</span>
+          </>
+        }
+        description="Status da assinatura e meio de pagamento — tudo num lugar só."
+        tone={tone}
+      />
+
+      <div className="grid auto-rows-[minmax(120px,_auto)] grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+        <StatCard
+          tone={tone === "expense" ? "expense" : tone === "warning" ? "warning" : "primary"}
+          label="Status"
+          value={
+            <span className="inline-flex items-center gap-2 text-xl sm:text-2xl">
+              <PulseDot color={pulseColor(state.kind)} />
+              {statusLabel}
+            </span>
+          }
+          icon={<ShieldCheck className="h-4 w-4" />}
+          trend={trendForState(state)}
+        />
+        <StatCard
+          tone="default"
+          label="Mensalidade"
+          value={
+            <span className="num">
+              <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                R$
+              </span>
+              {BRAND.pricing.monthlyBRL.toFixed(2).replace(".", ",")}
+            </span>
+          }
+          icon={<CreditCard className="h-4 w-4" />}
+          trend={
+            state.kind === "free"
+              ? "cortesia vitalícia"
+              : `após ${BRAND.pricing.trialDays} dias de trial`
+          }
+        />
+        <StatCard
+          tone={state.kind === "past_due" ? "expense" : "default"}
+          label="Próxima cobrança"
+          value={<span className="num text-xl sm:text-2xl">{nextBillingLabel}</span>}
+          icon={<CalendarClock className="h-4 w-4" />}
+          trend={state.kind === "active" ? "renovação automática" : "sem cobrança ativa"}
+        />
       </div>
 
       <Card>
@@ -41,7 +105,7 @@ export default async function CobrancaPage() {
             <StatusBadge state={state.kind} />
           </div>
           <CardDescription>
-            R$ {BRAND.pricing.monthlyBRL.toFixed(2).replace(".", ",")}/mês depois do trial.
+            {planPriceBRL}/mês depois do trial.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
@@ -111,6 +175,74 @@ export default async function CobrancaPage() {
       </Card>
     </div>
   );
+}
+
+type SubState = ReturnType<typeof describeSubscription>;
+
+function toneForState(kind: SubState["kind"]): "primary" | "income" | "warning" | "expense" {
+  switch (kind) {
+    case "active":
+    case "free":
+      return "income";
+    case "trialing":
+      return "primary";
+    case "past_due":
+      return "warning";
+    case "blocked":
+      return "expense";
+    default:
+      return "primary";
+  }
+}
+
+function humanStatus(kind: SubState["kind"]): string {
+  switch (kind) {
+    case "active":
+      return "Ativo";
+    case "trialing":
+      return "Trial";
+    case "free":
+      return "Gratuito";
+    case "past_due":
+      return "Em atraso";
+    case "blocked":
+      return "Bloqueado";
+    default:
+      return kind;
+  }
+}
+
+function pulseColor(kind: SubState["kind"]): string {
+  switch (kind) {
+    case "active":
+    case "free":
+      return "var(--color-income)";
+    case "trialing":
+      return "var(--color-primary)";
+    case "past_due":
+      return "var(--color-warning)";
+    case "blocked":
+      return "var(--color-expense)";
+    default:
+      return "var(--color-primary)";
+  }
+}
+
+function trendForState(state: SubState): React.ReactNode {
+  if (state.kind === "trialing") {
+    return state.daysLeft === 0
+      ? "termina hoje"
+      : state.daysLeft === 1
+        ? "mais 1 dia"
+        : `mais ${state.daysLeft} dias`;
+  }
+  if (state.kind === "past_due") {
+    return `bloqueio em ${state.daysUntilBlock} dia${state.daysUntilBlock === 1 ? "" : "s"}`;
+  }
+  if (state.kind === "free") return "cortesia da administração";
+  if (state.kind === "active") return "renovação automática";
+  if (state.kind === "blocked") return "acesso suspenso";
+  return null;
 }
 
 function StatusBadge({ state }: { state: string }) {

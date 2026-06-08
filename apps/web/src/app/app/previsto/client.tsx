@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader, StatCard } from "@/components/ui/page-header";
+import { ProgressRing } from "@/components/ui/bento";
 import {
   Dialog,
   DialogContent,
@@ -82,41 +84,113 @@ export function PrevistoClient({
     router.refresh();
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Previsto</h1>
-          <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
-            Checklist do mês. Marca como pago → vira despesa real.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => nav(-1)} aria-label="Mês anterior">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-1 text-sm font-medium">
-            {monthLabel(initial.monthIso)}
-          </span>
-          <Button variant="ghost" size="sm" onClick={() => nav(1)} aria-label="Próximo mês">
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button onClick={() => setOpenAdd(true)}>
-            <Plus className="h-4 w-4" /> Adicionar
-          </Button>
-        </div>
-      </div>
+  const totalCommitted = initial.paidCents + initial.toPayCents + initial.overdueCents;
+  const paidPct = totalCommitted > 0 ? (initial.paidCents / totalCommitted) * 100 : 0;
+  const previstoBalance = initial.totalIncomeCents - initial.totalExpenseCents;
 
-      <div className="grid gap-3 sm:grid-cols-4">
-        <SummaryCard label="A pagar" value={initial.toPayCents} accent="warning" />
-        <SummaryCard label="Pago" value={initial.paidCents} accent="income" />
-        <SummaryCard label="Atrasado" value={initial.overdueCents} accent="expense" />
-        <SummaryCard
-          label="Saldo previsto"
-          value={initial.totalIncomeCents - initial.totalExpenseCents}
-          accent={
-            initial.totalIncomeCents - initial.totalExpenseCents >= 0 ? "income" : "expense"
+  return (
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Plataforma · Previsto"
+        title={
+          <>
+            Checklist <span className="display-serif italic">do mês</span>
+          </>
+        }
+        description="Marca como pago e vira despesa real. Pula o que não vai rolar este mês."
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => nav(-1)} aria-label="Mês anterior">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-1 text-sm font-medium">
+              {monthLabel(initial.monthIso)}
+            </span>
+            <Button variant="ghost" size="sm" onClick={() => nav(1)} aria-label="Próximo mês">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button onClick={() => setOpenAdd(true)}>
+              <Plus className="h-4 w-4" /> Adicionar
+            </Button>
+          </div>
+        }
+      />
+
+      <div className="grid auto-rows-[minmax(120px,_auto)] grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatCard
+          tone="warning"
+          label="A pagar"
+          value={
+            <span className="num">
+              <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                R$
+              </span>
+              {(initial.toPayCents / 100).toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
           }
+          trend="ainda em aberto"
+        />
+        <StatCard
+          tone="income"
+          label="Pago"
+          value={
+            <span className="num">
+              <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                R$
+              </span>
+              {(initial.paidCents / 100).toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          }
+          trend={
+            totalCommitted > 0
+              ? `${Math.round(paidPct)}% do compromisso do mês`
+              : "sem itens marcados"
+          }
+          chart={
+            totalCommitted > 0 ? (
+              <div className="flex items-center justify-end">
+                <ProgressRing value={paidPct} label="pago" color="var(--color-income)" size={72} />
+              </div>
+            ) : undefined
+          }
+        />
+        <StatCard
+          tone="expense"
+          label="Atrasado"
+          value={
+            <span className="num">
+              <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                R$
+              </span>
+              {(initial.overdueCents / 100).toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          }
+          trend={initial.overdueCents > 0 ? "passou do vencimento" : "tudo em dia"}
+        />
+        <StatCard
+          tone={previstoBalance >= 0 ? "primary" : "expense"}
+          label="Saldo previsto"
+          value={
+            <span className="num">
+              <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                R$
+              </span>
+              {(Math.abs(previstoBalance) / 100).toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          }
+          trend="receita prevista − despesa prevista"
         />
       </div>
 
@@ -228,31 +302,6 @@ export function PrevistoClient({
         monthIso={initial.monthIso}
         onCreated={() => router.refresh()}
       />
-    </div>
-  );
-}
-
-function SummaryCard({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: number;
-  accent: "income" | "expense" | "warning";
-}) {
-  const color =
-    accent === "income"
-      ? "var(--color-income)"
-      : accent === "expense"
-        ? "var(--color-expense)"
-        : "var(--color-warning)";
-  return (
-    <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
-      <p className="text-[10px] uppercase tracking-wider text-[var(--color-fg-subtle)]">{label}</p>
-      <p className="num mt-1 text-lg font-semibold" style={{ color }}>
-        {formatBRL(value)}
-      </p>
     </div>
   );
 }

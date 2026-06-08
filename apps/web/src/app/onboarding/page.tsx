@@ -25,11 +25,22 @@ export default async function OnboardingPage() {
         <div className="inline-flex">
           <BrandMark />
         </div>
-        <div className="mt-8 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-soft">
-          <h1 className="display-serif text-3xl tracking-tight">
-            Bem-vinda, {session.user.name?.split(" ")[0] ?? "família"}.
+        <div className="relative isolate mt-8 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-soft transition-all duration-300 hover:shadow-pop">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -right-12 -top-12 -z-10 h-40 w-40 rounded-full bg-[var(--color-primary)]/12 blur-[80px]"
+          />
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-primary)]">
+            Boas-vindas · Onboarding
+          </p>
+          <h1 className="mt-2 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+            Bem-vinda,{" "}
+            <span className="display-serif italic">
+              {session.user.name?.split(" ")[0] ?? "família"}
+            </span>
+            .
           </h1>
-          <p className="mt-2 text-sm text-[var(--color-fg-muted)]">
+          <p className="mt-2 max-w-2xl text-pretty text-sm leading-relaxed text-[var(--color-fg-muted)]">
             Seu trial de {BRAND.pricing.trialDays} dias começou. A partir daqui, dois caminhos:
           </p>
 

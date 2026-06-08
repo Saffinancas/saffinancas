@@ -6,6 +6,7 @@ import { getActiveProviderId } from "@/lib/whatsapp-providers";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { WhatsappAdminClient } from "./client";
 import { PROVIDER_LABELS } from "@/lib/whatsapp-providers";
+import { PageHeader, Section } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -23,28 +24,39 @@ export default async function WhatsappAdminPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">WhatsApp</h1>
-        <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
-          Escolha qual provedor a plataforma usa pra capturar mensagens dos clientes.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Plataforma · WhatsApp"
+        title={
+          <>
+            Provedor de <span className="display-serif italic">mensagens</span>
+          </>
+        }
+        description="Escolha qual provedor a plataforma usa pra capturar mensagens dos clientes."
+        tone="income"
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Provedor ativo</CardTitle>
-          <CardDescription>
-            Atualmente: <strong>{PROVIDER_LABELS[activeProvider]}</strong>
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <WhatsappAdminClient
-            initialProvider={activeProvider}
-            initialSettings={settingsMap}
-          />
-        </CardContent>
-      </Card>
+      <Section
+        eyebrow="Conexão"
+        title="Provedor ativo"
+        description={`Atualmente: ${PROVIDER_LABELS[activeProvider]}`}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>Configuração</CardTitle>
+            <CardDescription>
+              Troque de provedor ou ajuste credenciais — alterações entram em vigor no
+              próximo evento recebido.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <WhatsappAdminClient
+              initialProvider={activeProvider}
+              initialSettings={settingsMap}
+            />
+          </CardContent>
+        </Card>
+      </Section>
     </div>
   );
 }

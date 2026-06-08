@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { db, schema } from "@cofre/db";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -24,13 +25,17 @@ export default async function AdminAuditoriaPage() {
     .limit(200);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Auditoria</h1>
-        <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
-          Últimos 200 eventos. IPs ficam anonimizados após 90 dias.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Painel · Auditoria"
+        title={
+          <>
+            Trilha de <span className="display-serif italic">eventos</span>
+          </>
+        }
+        description="Últimos 200 eventos. IPs ficam anonimizados após 90 dias."
+        tone="warning"
+      />
 
       {events.length === 0 ? (
         <Card>
@@ -56,8 +61,8 @@ export default async function AdminAuditoriaPage() {
             </thead>
             <tbody>
               {events.map((e) => (
-                <tr key={e.id} className="border-b border-[var(--color-border)] last:border-b-0">
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-[var(--color-fg-muted)]">
+                <tr key={e.id} className="border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-surface-muted)]">
+                  <td className="whitespace-nowrap px-4 py-2 num tabular text-xs text-[var(--color-fg-muted)]">
                     {new Date(e.createdAt).toLocaleString("pt-BR")}
                   </td>
                   <td className="px-4 py-2 font-medium">{e.action}</td>
@@ -67,7 +72,7 @@ export default async function AdminAuditoriaPage() {
                   <td className="px-4 py-2 text-xs text-[var(--color-fg-muted)]">
                     {e.actorEmail ?? "—"}
                   </td>
-                  <td className="px-4 py-2 text-xs text-[var(--color-fg-subtle)]">
+                  <td className="px-4 py-2 num tabular text-xs text-[var(--color-fg-subtle)]">
                     {e.ipAddress ?? "—"}
                   </td>
                 </tr>

@@ -3,7 +3,17 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Loader2, Home, Car, Image as ImageIcon, Package } from "lucide-react";
+import {
+  Plus,
+  Loader2,
+  Home,
+  Car,
+  Image as ImageIcon,
+  Package,
+  ArrowUpRight,
+  ArrowDownRight,
+  Wallet,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +26,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatBRL } from "@/lib/utils";
+import { PageHeader, StatCard, Section } from "@/components/ui/page-header";
+import { BentoCard } from "@/components/ui/bento";
 import { createAsset } from "@/lib/patrimony";
 
 type Asset = {
@@ -45,79 +56,176 @@ export function PatrimonyClient({ assets }: { assets: Asset[] }) {
   const variationPct = totalCost > 0 ? (variation / totalCost) * 100 : 0;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Patrimônio</h1>
-          <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
-            Imóveis, veículos e outros bens. Aluguéis viram receita recorrente.
-          </p>
-        </div>
-        <Button onClick={() => setOpen(true)}>
-          <Plus className="h-4 w-4" /> Cadastrar bem
-        </Button>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Plataforma · Patrimônio"
+        title={
+          <>
+            Seus <span className="display-serif italic">bens</span> e a valorização deles
+          </>
+        }
+        description="Imóveis, veículos e outros bens. Aluguéis viram receita recorrente e tudo conecta na ficha de Bens e Direitos do IR."
+        actions={
+          <Button onClick={() => setOpen(true)}>
+            <Plus className="h-4 w-4" /> Cadastrar bem
+          </Button>
+        }
+        tone="primary"
+      />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Stat label="Valor atual" value={formatBRL(totalValue)} tone="primary" />
-        <Stat label="Custo de aquisição" value={formatBRL(totalCost)} />
-        <Stat
-          label="Variação"
-          value={`${formatBRL(variation)} (${variationPct >= 0 ? "+" : ""}${variationPct.toFixed(1)}%)`}
+      <div className="grid auto-rows-[minmax(120px,_auto)] grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <BentoCard
+          span="col-span-2 lg:row-span-2"
+          tone={variation >= 0 ? "primary" : "expense"}
+          eyebrow="Valor atual"
+          metric={
+            <span className="num">
+              <span className="text-base font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                R$
+              </span>
+              {(totalValue / 100).toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          }
+          footnote={
+            <span className="inline-flex items-center gap-1.5">
+              {variation >= 0 ? (
+                <ArrowUpRight className="h-3 w-3 text-[var(--color-income)]" />
+              ) : (
+                <ArrowDownRight className="h-3 w-3 text-[var(--color-expense)]" />
+              )}
+              <span
+                className={
+                  variation >= 0
+                    ? "text-[var(--color-income)] font-medium"
+                    : "text-[var(--color-expense)] font-medium"
+                }
+              >
+                {variation >= 0 ? "+" : ""}
+                {variationPct.toFixed(1)}%
+              </span>
+              <span>vs. aquisição</span>
+            </span>
+          }
+        >
+          <p className="mt-2 text-[11px] text-[var(--color-fg-subtle)]">
+            {assets.length} {assets.length === 1 ? "bem cadastrado" : "bens cadastrados"}
+          </p>
+        </BentoCard>
+
+        <StatCard
+          tone="default"
+          label="Custo de aquisição"
+          value={
+            <span className="num">
+              <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                R$
+              </span>
+              {(totalCost / 100).toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          }
+          icon={<Wallet className="h-4 w-4" />}
+          trend="quanto você pagou"
+        />
+
+        <StatCard
           tone={variation >= 0 ? "income" : "expense"}
+          label="Variação"
+          value={
+            <span className="num">
+              <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                R$
+              </span>
+              {(Math.abs(variation) / 100).toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          }
+          icon={
+            variation >= 0 ? (
+              <ArrowUpRight className="h-4 w-4 text-[var(--color-income)]" />
+            ) : (
+              <ArrowDownRight className="h-4 w-4 text-[var(--color-expense)]" />
+            )
+          }
+          trend={
+            <span className="inline-flex items-center gap-1">
+              <span
+                className={
+                  variation >= 0
+                    ? "text-[var(--color-income)] font-medium"
+                    : "text-[var(--color-expense)] font-medium"
+                }
+              >
+                {variation >= 0 ? "+" : ""}
+                {variationPct.toFixed(1)}%
+              </span>
+              <span>acumulada</span>
+            </span>
+          }
         />
       </div>
 
       {assets.length === 0 ? (
-        <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-10 text-center">
+        <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-10 text-center shadow-soft">
           <p className="text-sm font-medium">Nenhum bem cadastrado ainda</p>
-          <p className="mt-1 text-xs text-[var(--color-fg-muted)]">
+          <p className="mx-auto mt-2 max-w-sm text-xs text-[var(--color-fg-muted)]">
             Cadastre um imóvel pra começar a controlar valorização e aluguéis.
           </p>
+          <Button className="mt-5" onClick={() => setOpen(true)}>
+            <Plus className="h-4 w-4" /> Cadastrar bem
+          </Button>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {assets.map((a) => {
-            const meta = TYPE_LABELS[a.type];
-            const variation = a.currentValueCents - a.acquisitionCostCents;
-            const variationPct =
-              a.acquisitionCostCents > 0 ? (variation / a.acquisitionCostCents) * 100 : 0;
-            return (
-              <Link
-                key={a.id}
-                href={`/app/patrimonio/${a.id}`}
-                className="group rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-soft transition-colors hover:bg-[var(--color-surface-muted)]"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <span className="grid h-10 w-10 place-items-center rounded-[var(--radius)] bg-[var(--color-primary-soft)] text-[var(--color-primary)]">
-                      <meta.icon className="h-5 w-5" />
-                    </span>
-                    <div>
-                      <p className="font-semibold">{a.name}</p>
-                      <p className="text-xs text-[var(--color-fg-muted)]">{meta.label}</p>
+        <Section eyebrow="Inventário" title="Bens cadastrados">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {assets.map((a) => {
+              const meta = TYPE_LABELS[a.type];
+              const v = a.currentValueCents - a.acquisitionCostCents;
+              const vPct = a.acquisitionCostCents > 0 ? (v / a.acquisitionCostCents) * 100 : 0;
+              return (
+                <Link
+                  key={a.id}
+                  href={`/app/patrimonio/${a.id}`}
+                  className="group rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-soft transition-all duration-300 hover:-translate-y-0.5 hover:shadow-pop hover:bg-[var(--color-surface-muted)]"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <span className="grid h-10 w-10 place-items-center rounded-[var(--radius)] bg-[var(--color-primary-soft)] text-[var(--color-primary)]">
+                        <meta.icon className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <p className="font-semibold">{a.name}</p>
+                        <p className="text-xs text-[var(--color-fg-muted)]">{meta.label}</p>
+                      </div>
                     </div>
+                    <Badge variant={v >= 0 ? "income" : "expense"}>
+                      {v >= 0 ? "+" : ""}
+                      {vPct.toFixed(1)}%
+                    </Badge>
                   </div>
-                  <Badge variant={variation >= 0 ? "income" : "expense"}>
-                    {variation >= 0 ? "+" : ""}
-                    {variationPct.toFixed(1)}%
-                  </Badge>
-                </div>
-                <div className="mt-4 flex items-baseline justify-between">
-                  <p className="display-serif tabular text-xl">
-                    <span className="text-xs not-italic">R$</span>{" "}
-                    {(a.currentValueCents / 100).toLocaleString("pt-BR", {
-                      minimumFractionDigits: 2,
-                    })}
-                  </p>
-                  <p className="text-[10px] text-[var(--color-fg-subtle)]">
-                    Adquirido {new Date(a.acquisitionDate).toLocaleDateString("pt-BR")}
-                  </p>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+                  <div className="mt-4 flex items-baseline justify-between">
+                    <p className="num tabular text-xl font-semibold">
+                      <span className="text-xs font-normal text-[var(--color-fg-muted)]">R$</span>{" "}
+                      {(a.currentValueCents / 100).toLocaleString("pt-BR", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </p>
+                    <p className="text-[10px] text-[var(--color-fg-subtle)]">
+                      Adquirido {new Date(a.acquisitionDate).toLocaleDateString("pt-BR")}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </Section>
       )}
 
       <AssetDialog open={open} onOpenChange={setOpen} />
@@ -288,27 +396,3 @@ function parseAmountToCents(input: string): number | null {
   return Math.round(n * 100);
 }
 
-function Stat({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: "income" | "expense" | "primary";
-}) {
-  const ac =
-    tone === "income"
-      ? "text-[var(--color-income)]"
-      : tone === "expense"
-        ? "text-[var(--color-expense)]"
-        : tone === "primary"
-          ? "text-[var(--color-primary)]"
-          : "text-[var(--color-fg)]";
-  return (
-    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-soft">
-      <p className="text-xs uppercase tracking-wider text-[var(--color-fg-subtle)]">{label}</p>
-      <p className={"display-serif tabular mt-2 text-2xl " + ac}>{value}</p>
-    </div>
-  );
-}

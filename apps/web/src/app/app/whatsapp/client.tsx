@@ -18,6 +18,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
+import { PulseDot } from "@/components/ui/bento";
 import {
   getSessionView,
   requestPairing,
@@ -75,14 +77,27 @@ export function WhatsappClient({ initial }: { initial: WaSessionView }) {
   const isWebhook =
     view.provider === "twilio_sandbox" || view.provider === "twilio_production" || view.provider === "meta_cloud";
 
+  const connected = view.status === "connected" && Boolean(view.monitoredGroupId);
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">WhatsApp</h1>
-        <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
-          {view.pairingInstructions}
-        </p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Plataforma · WhatsApp"
+        title={
+          <>
+            Captura via <span className="display-serif italic">WhatsApp</span>
+          </>
+        }
+        description={view.pairingInstructions}
+        tone="income"
+        actions={
+          connected ? (
+            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-income)]/30 bg-[var(--color-income-soft)] px-3 py-1.5 text-xs font-medium text-[var(--color-income)]">
+              <PulseDot color="var(--color-income)" /> ativo
+            </span>
+          ) : null
+        }
+      />
 
       {view.provider === "sim" && (
         <div className="flex items-start gap-3 rounded-[var(--radius)] border border-[var(--color-warning)]/30 bg-[var(--color-warning-soft)] p-3 text-xs text-[var(--color-warning)]">

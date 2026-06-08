@@ -2,6 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { db, schema } from "@cofre/db";
 import { count, eq } from "drizzle-orm";
+import { Users, CheckCircle2, AlertTriangle, Wallet } from "lucide-react";
+import { PageHeader, StatCard, Section } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -25,68 +27,88 @@ async function loadStats() {
 
 export default async function AdminDashboard() {
   const stats = await loadStats();
+  const mrr = stats.active * 29.9;
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Visão geral</h1>
-        <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
-          Saúde da plataforma em tempo real. Esses números são lidos direto do banco.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Painel · Visão geral"
+        title={
+          <>
+            Saúde da <span className="display-serif italic">plataforma</span>
+          </>
+        }
+        description="Os números vêm direto do banco — sem cache nem aproximação."
+        tone="primary"
+      />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Famílias cadastradas" value={stats.families} />
-        <Stat label="Assinaturas ativas" value={stats.active} accent="income" />
-        <Stat
-          label="Em atraso (past_due)"
-          value={stats.pastDue}
-          accent={stats.pastDue > 0 ? "expense" : undefined}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatCard
+          tone="primary"
+          label="Famílias cadastradas"
+          value={<span className="num tabular">{stats.families}</span>}
+          icon={<Users className="h-4 w-4" />}
+          trend="total na base"
         />
-        <Stat label="MRR estimado" value={`R$ ${(stats.active * 29.9).toFixed(2).replace(".", ",")}`} accent="primary" />
+        <StatCard
+          tone="income"
+          label="Assinaturas ativas"
+          value={<span className="num tabular">{stats.active}</span>}
+          icon={<CheckCircle2 className="h-4 w-4 text-[var(--color-income)]" />}
+          trend="pagantes hoje"
+        />
+        <StatCard
+          tone={stats.pastDue > 0 ? "expense" : "default"}
+          label="Em atraso"
+          value={<span className="num tabular">{stats.pastDue}</span>}
+          icon={
+            <AlertTriangle
+              className={
+                stats.pastDue > 0
+                  ? "h-4 w-4 text-[var(--color-expense)]"
+                  : "h-4 w-4"
+              }
+            />
+          }
+          trend="status past_due"
+        />
+        <StatCard
+          tone="primary"
+          label="MRR estimado"
+          value={
+            <span className="num tabular">
+              <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                R$
+              </span>
+              {mrr.toFixed(2).replace(".", ",")}
+            </span>
+          }
+          icon={<Wallet className="h-4 w-4" />}
+          trend="ativas × R$ 29,90"
+        />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Próximos passos</CardTitle>
-          <CardDescription>
-            O painel está vazio porque ainda não há clientes. À medida que famílias forem
-            assinando, as listas abaixo se preenchem sozinhas.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3 text-sm">
-          <Row label="Cadastro de família" status="pending" desc="Falta a tela /assinar com checkout Pagar.me." />
-          <Row label="Webhooks de cobrança" status="pending" desc="POST /api/webhooks/pagarme — idempotente." />
-          <Row label="Worker WhatsApp" status="pending" desc="Pareamento via QR + ingestão na fila." />
-          <Row label="Classificação por IA" status="done" desc="@cofre/ai já com Claude/OpenAI/Gemini stubados." />
-          <Row label="Migrations aplicadas" status="done" desc="PGlite local, mesmo schema da nuvem." />
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string | number;
-  accent?: "income" | "expense" | "primary";
-}) {
-  const accentClass =
-    accent === "income"
-      ? "text-[var(--color-income)]"
-      : accent === "expense"
-        ? "text-[var(--color-expense)]"
-        : accent === "primary"
-          ? "text-[var(--color-primary)]"
-          : "text-[var(--color-fg)]";
-  return (
-    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-soft">
-      <p className="text-xs uppercase tracking-wider text-[var(--color-fg-subtle)]">{label}</p>
-      <p className={`display-serif tabular mt-2 text-3xl ${accentClass}`}>{value}</p>
+      <Section
+        eyebrow="Roadmap"
+        title="Próximos passos"
+        description="O painel está vazio porque ainda não há clientes. À medida que famílias forem assinando, as listas abaixo se preenchem sozinhas."
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>Checklist de plataforma</CardTitle>
+            <CardDescription>
+              Estado dos blocos críticos do produto.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 text-sm">
+            <Row label="Cadastro de família" status="pending" desc="Falta a tela /assinar com checkout Pagar.me." />
+            <Row label="Webhooks de cobrança" status="pending" desc="POST /api/webhooks/pagarme — idempotente." />
+            <Row label="Worker WhatsApp" status="pending" desc="Pareamento via QR + ingestão na fila." />
+            <Row label="Classificação por IA" status="done" desc="@cofre/ai já com Claude/OpenAI/Gemini stubados." />
+            <Row label="Migrations aplicadas" status="done" desc="PGlite local, mesmo schema da nuvem." />
+          </CardContent>
+        </Card>
+      </Section>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { db, schema } from "@cofre/db";
 import { auth } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader, Section } from "@/components/ui/page-header";
 import { BrainCircuit, Users, FileDown, AlertTriangle, ArrowRight } from "lucide-react";
 import { ConfigForm } from "./config-form";
 
@@ -23,62 +24,66 @@ export default async function ConfigPage() {
   if (!family) return null;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Configurações</h1>
-        <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
-          Tudo que muda como a plataforma se comporta pra sua família.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Plataforma · Configurações"
+        title={
+          <>
+            Como tudo se <span className="display-serif italic">comporta</span>
+          </>
+        }
+        description="Tudo que muda como a plataforma se comporta pra sua família."
+        tone="primary"
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Família</CardTitle>
-          <CardDescription>Como vocês são identificados internamente.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ConfigForm
-            family={{
-              id: family.id,
-              name: family.name,
-              notifyOnCapture: family.notifyOnCapture,
-            }}
+      <Section eyebrow="Família" title="Identificação" description="Como vocês são identificados internamente.">
+        <Card>
+          <CardContent className="pt-6">
+            <ConfigForm
+              family={{
+                id: family.id,
+                name: family.name,
+                notifyOnCapture: family.notifyOnCapture,
+              }}
+            />
+          </CardContent>
+        </Card>
+      </Section>
+
+      <Section eyebrow="Atalhos" title="Configurações detalhadas">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <SettingLink
+            href="/app/config/ia"
+            icon={BrainCircuit}
+            title={family.byokEnabled ? "Sua chave de IA" : "Provedor de IA"}
+            desc={
+              family.byokEnabled
+                ? family.byokApiKeyEnc
+                  ? "Você está usando sua própria chave."
+                  : "Cadastre sua chave de API."
+                : "Gerenciado pela equipe Saf."
+            }
           />
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <SettingLink
-          href="/app/config/ia"
-          icon={BrainCircuit}
-          title={family.byokEnabled ? "Sua chave de IA" : "Provedor de IA"}
-          desc={
-            family.byokEnabled
-              ? family.byokApiKeyEnc
-                ? "Você está usando sua própria chave."
-                : "Cadastre sua chave de API."
-              : "Gerenciado pela equipe Saf."
-          }
-        />
-        <SettingLink
-          href="/app/categorias"
-          icon={Users}
-          title="Categorias"
-          desc="Criar, renomear, arquivar."
-        />
-        <SettingLink
-          href="/app/cobranca"
-          icon={ArrowRight}
-          title="Plano e cobrança"
-          desc="Status do trial e meio de pagamento."
-        />
-        <SettingLink
-          href="/api/me/export"
-          icon={FileDown}
-          title="Exportar meus dados (LGPD)"
-          desc="ZIP com tudo o que temos sobre você."
-        />
-      </div>
+          <SettingLink
+            href="/app/categorias"
+            icon={Users}
+            title="Categorias"
+            desc="Criar, renomear, arquivar."
+          />
+          <SettingLink
+            href="/app/cobranca"
+            icon={ArrowRight}
+            title="Plano e cobrança"
+            desc="Status do trial e meio de pagamento."
+          />
+          <SettingLink
+            href="/api/me/export"
+            icon={FileDown}
+            title="Exportar meus dados (LGPD)"
+            desc="ZIP com tudo o que temos sobre você."
+          />
+        </div>
+      </Section>
 
       <Card className="border-[var(--color-expense)]/30">
         <CardHeader>
@@ -117,7 +122,7 @@ function SettingLink({
   return (
     <Link
       href={href}
-      className="group flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-soft transition-colors hover:bg-[var(--color-surface-muted)]"
+      className="group flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-soft transition-all duration-300 hover:-translate-y-0.5 hover:shadow-pop hover:bg-[var(--color-surface-muted)]"
     >
       <span className="grid h-10 w-10 place-items-center rounded-[var(--radius)] bg-[var(--color-primary-soft)] text-[var(--color-primary)]">
         <Icon className="h-5 w-5" />

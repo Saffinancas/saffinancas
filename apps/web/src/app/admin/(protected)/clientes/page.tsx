@@ -3,6 +3,7 @@ import { desc, eq } from "drizzle-orm";
 import { db, schema } from "@cofre/db";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -25,14 +26,17 @@ export default async function ClientesPage() {
     .limit(200);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Clientes</h1>
-        <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
-          {rows.length} famílias cadastradas. Clique numa linha pra ver detalhe, mudar plano
-          ou trocar IA.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Painel · Clientes"
+        title={
+          <>
+            Famílias <span className="display-serif italic">na base</span>
+          </>
+        }
+        description={`${rows.length} famílias cadastradas. Clique numa linha pra ver detalhe, mudar plano ou trocar IA.`}
+        tone="primary"
+      />
 
       {rows.length === 0 ? (
         <Card>
@@ -78,7 +82,7 @@ export default async function ClientesPage() {
                       <StatusBadge status={r.subStatus} />
                     </Link>
                   </td>
-                  <td className="px-4 py-2.5 text-xs">
+                  <td className="px-4 py-2.5 num tabular text-xs">
                     <Link href={`/admin/clientes/${r.familyId}`} className="block">
                       {r.nextBillingAt
                         ? new Date(r.nextBillingAt).toLocaleDateString("pt-BR")
@@ -87,7 +91,7 @@ export default async function ClientesPage() {
                           : "—"}
                     </Link>
                   </td>
-                  <td className="px-4 py-2.5 text-xs text-[var(--color-fg-muted)]">
+                  <td className="px-4 py-2.5 num tabular text-xs text-[var(--color-fg-muted)]">
                     <Link href={`/admin/clientes/${r.familyId}`} className="block">
                       {new Date(r.createdAt).toLocaleDateString("pt-BR")}
                     </Link>

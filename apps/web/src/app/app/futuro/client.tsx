@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader, StatCard, Section } from "@/components/ui/page-header";
+import { Sparkline } from "@/components/ui/bento";
 import {
   Dialog,
   DialogContent,
@@ -45,58 +47,154 @@ export function FuturoClient({
   const router = useRouter();
   const [openAdd, setOpenAdd] = React.useState(false);
 
+  const summary = React.useMemo(() => {
+    let totalExpected = 0;
+    let received = 0;
+    for (const i of incomes) {
+      totalExpected += i.totalCents;
+      if (i.received) received += i.totalCents;
+    }
+    const lastCumulative = forecast.length ? forecast[forecast.length - 1]!.cumulativeCents : 0;
+    const lowest = forecast.length
+      ? Math.min(...forecast.map((d) => d.cumulativeCents))
+      : 0;
+    return { totalExpected, received, pending: totalExpected - received, lastCumulative, lowest };
+  }, [incomes, forecast]);
+
+  const sparkValues = forecast.map((d) => d.cumulativeCents / 100);
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Receitas e dívidas futuras</h1>
-          <p className="mt-1 text-sm text-[var(--color-fg-muted)]">
-            O que vai entrar nos próximos meses e como impacta o fluxo de caixa.
-          </p>
-        </div>
-        <Button onClick={() => setOpenAdd(true)}>
-          <Plus className="h-4 w-4" /> Adicionar
-        </Button>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Plataforma · Futuro"
+        title={
+          <>
+            O que vem <span className="display-serif italic">pela frente</span>
+          </>
+        }
+        description="O que vai entrar nos próximos meses e como impacta o fluxo de caixa."
+        actions={
+          <Button onClick={() => setOpenAdd(true)}>
+            <Plus className="h-4 w-4" /> Adicionar
+          </Button>
+        }
+      />
+
+      <div className="grid auto-rows-[minmax(120px,_auto)] grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatCard
+          tone="income"
+          label="Esperado"
+          value={
+            <span className="num">
+              <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                R$
+              </span>
+              {(summary.totalExpected / 100).toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          }
+          trend={`${incomes.length} receita${incomes.length === 1 ? "" : "s"} cadastrada${incomes.length === 1 ? "" : "s"}`}
+          icon={<TrendingUp className="h-4 w-4 text-[var(--color-income)]" />}
+        />
+        <StatCard
+          tone="primary"
+          label="Já recebido"
+          value={
+            <span className="num">
+              <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                R$
+              </span>
+              {(summary.received / 100).toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          }
+          trend="virou transação real"
+        />
+        <StatCard
+          tone="warning"
+          label="A receber"
+          value={
+            <span className="num">
+              <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                R$
+              </span>
+              {(summary.pending / 100).toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          }
+          trend="ainda em rota"
+        />
+        <StatCard
+          tone={summary.lowest < 0 ? "expense" : "income"}
+          label="Saldo em 12 meses"
+          value={
+            <span className="num">
+              <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
+                R$
+              </span>
+              {(summary.lastCumulative / 100).toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          }
+          trend={
+            summary.lowest < 0
+              ? `mínimo: ${formatBRL(summary.lowest)}`
+              : "fluxo se mantém positivo"
+          }
+          chart={
+            sparkValues.length > 1 ? (
+              <Sparkline
+                values={sparkValues}
+                height={42}
+                stroke={summary.lowest < 0 ? "var(--color-expense)" : "var(--color-income)"}
+              />
+            ) : undefined
+          }
+        />
       </div>
 
-      {/* Fluxo de caixa 12 meses */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Fluxo de caixa próximos 12 meses</CardTitle>
-          <CardDescription>
-            Combina previsto (a pagar) com receitas futuras. Saldo acumulado mostra quando o
-            resultado vira positivo ou negativo.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ForecastChart data={forecast} />
-        </CardContent>
-      </Card>
+      <Section
+        eyebrow="Projeção"
+        title="Fluxo de caixa próximos 12 meses"
+        description="Combina previsto (a pagar) com receitas futuras. Saldo acumulado mostra quando o resultado vira positivo ou negativo."
+      >
+        <Card>
+          <CardContent className="pt-6">
+            <ForecastChart data={forecast} />
+          </CardContent>
+        </Card>
+      </Section>
 
-      {/* Lista de receitas futuras */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Receitas futuras esperadas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {incomes.length === 0 ? (
-            <p className="text-sm text-[var(--color-fg-muted)]">
-              Cadastre receitas que você sabe que vão entrar — 13º, restituição IR, freelance combinado,
-              empréstimo a receber...
-            </p>
-          ) : (
-            <ul className="flex flex-col divide-y divide-[var(--color-border)]">
-              {incomes.map((i) => (
-                <FutureItem
-                  key={i.id}
-                  income={i}
-                  onUpdate={() => router.refresh()}
-                />
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      <Section eyebrow="Carteira futura" title="Receitas esperadas">
+        <Card>
+          <CardContent className="pt-6">
+            {incomes.length === 0 ? (
+              <p className="text-sm text-[var(--color-fg-muted)]">
+                Cadastre receitas que você sabe que vão entrar — 13º, restituição IR, freelance combinado,
+                empréstimo a receber...
+              </p>
+            ) : (
+              <ul className="flex flex-col divide-y divide-[var(--color-border)]">
+                {incomes.map((i) => (
+                  <FutureItem
+                    key={i.id}
+                    income={i}
+                    onUpdate={() => router.refresh()}
+                  />
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      </Section>
 
       <AddDialog open={openAdd} onOpenChange={setOpenAdd} onCreated={() => router.refresh()} />
     </div>
