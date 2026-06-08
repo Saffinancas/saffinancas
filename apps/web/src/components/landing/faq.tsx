@@ -95,15 +95,16 @@ export function FAQ() {
     <section id="faq" className="border-t border-[var(--color-border)] py-20 sm:py-28">
       <div className="mx-auto max-w-3xl px-4 sm:px-6">
         <div className="text-center">
-          <p className="text-xs font-medium uppercase tracking-wider text-[var(--color-primary)]">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-primary)]">
             Perguntas frequentes
           </p>
-          <h2 className="mt-2 text-balance text-3xl tracking-tight sm:text-4xl">
-            O que toda família pergunta antes de assinar
+          <h2 className="mt-3 text-balance text-3xl tracking-tight sm:text-4xl lg:text-[2.4rem] lg:leading-[1.1]">
+            O que toda família pergunta{" "}
+            <span className="display-serif italic">antes de assinar</span>
           </h2>
         </div>
 
-        <div className="mt-10 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] px-6 shadow-soft">
+        <div className="mt-12 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] px-6 shadow-soft">
           {items.map((it, i) => (
             <FaqItem key={it.q} q={it.q} a={it.a} defaultOpen={i === 0} />
           ))}

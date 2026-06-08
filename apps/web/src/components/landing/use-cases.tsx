@@ -28,25 +28,30 @@ export function UseCases() {
     <section className="border-t border-[var(--color-border)] py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="max-w-2xl">
-          <p className="text-xs font-medium uppercase tracking-wider text-[var(--color-primary)]">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-primary)]">
             Casos de uso
           </p>
-          <h2 className="mt-2 text-balance text-3xl tracking-tight sm:text-4xl">
-            Funciona pra todo arranjo de família
+          <h2 className="mt-3 text-balance text-3xl tracking-tight sm:text-4xl lg:text-[2.6rem] lg:leading-[1.1]">
+            Funciona pra todo{" "}
+            <span className="display-serif italic">arranjo de família</span>
           </h2>
         </div>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {cases.map((c) => (
             <div
               key={c.title}
-              className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-soft"
+              className="group relative isolate overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-pop"
             >
-              <span className="grid h-10 w-10 place-items-center rounded-[var(--radius)] bg-[var(--color-primary-soft)] text-[var(--color-primary)]">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -right-12 -bottom-12 h-32 w-32 rounded-full bg-[var(--color-primary)]/8 blur-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+              />
+              <span className="grid h-11 w-11 place-items-center rounded-[var(--radius)] bg-[var(--color-primary-soft)] text-[var(--color-primary)] transition-transform duration-300 group-hover:scale-110">
                 <c.icon className="h-5 w-5" />
               </span>
-              <h3 className="mt-4 text-base font-semibold tracking-tight">{c.title}</h3>
-              <p className="mt-1.5 text-[14px] leading-relaxed text-[var(--color-fg-muted)]">
+              <h3 className="mt-5 text-base font-semibold tracking-tight">{c.title}</h3>
+              <p className="mt-1.5 text-[13.5px] leading-relaxed text-[var(--color-fg-muted)]">
                 {c.desc}
               </p>
             </div>

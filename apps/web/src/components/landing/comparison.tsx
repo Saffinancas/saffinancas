@@ -47,34 +47,42 @@ export function Comparison() {
     <section className="border-t border-[var(--color-border)] bg-[var(--color-bg-muted)] py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="max-w-2xl">
-          <p className="text-xs font-medium uppercase tracking-wider text-[var(--color-primary)]">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-primary)]">
             Comparativo honesto
           </p>
-          <h2 className="mt-2 text-balance text-3xl tracking-tight sm:text-4xl">
-            O que muda em relação às alternativas
+          <h2 className="mt-3 text-balance text-3xl tracking-tight sm:text-4xl lg:text-[2.6rem] lg:leading-[1.1]">
+            O que muda em relação às{" "}
+            <span className="display-serif italic">alternativas</span>
           </h2>
-          <p className="mt-3 text-pretty text-[14.5px] leading-relaxed text-[var(--color-fg-muted)]">
+          <p className="mt-4 text-pretty text-[14.5px] leading-relaxed text-[var(--color-fg-muted)]">
             Lista completa do que cada produto faz. &ldquo;Apps tradicionais&rdquo; = Mobills,
             Organizze, Olho no Dinheiro etc. &ldquo;Planilhas&rdquo; = Excel/Google Sheets.
             Onde tem ⊝, significa que existe parcialmente ou só num plano caro.
           </p>
         </div>
 
-        <div className="mt-8 overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-soft">
+        <div className="mt-12 overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-soft">
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead>
               <tr className="border-b border-[var(--color-border)] text-[var(--color-fg-subtle)]">
-                <th className="px-5 py-4 font-medium">Recurso</th>
-                <th className="px-3 py-4 text-center font-semibold text-[var(--color-primary)]">
+                <th className="px-5 py-4 text-[11px] font-semibold uppercase tracking-[0.14em]">Recurso</th>
+                <th className="relative px-3 py-4 text-center text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-primary)]">
                   Saf Finanças
+                  <span aria-hidden className="pointer-events-none absolute inset-x-3 bottom-0 h-0.5 bg-gradient-to-r from-transparent via-[var(--color-primary)] to-transparent" />
                 </th>
-                <th className="px-3 py-4 text-center font-medium">Apps tradicionais</th>
-                <th className="px-3 py-4 text-center font-medium">Planilhas</th>
+                <th className="px-3 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.14em]">Apps tradicionais</th>
+                <th className="px-3 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.14em]">Planilhas</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r, i) => (
-                <tr key={r.f} className={i % 2 === 1 ? "bg-[var(--color-bg-muted)]" : ""}>
+                <tr
+                  key={r.f}
+                  className={
+                    "transition-colors hover:bg-[var(--color-primary-soft)]/30 " +
+                    (i % 2 === 1 ? "bg-[var(--color-bg-muted)]/60" : "")
+                  }
+                >
                   <td className="px-5 py-3 text-[13.5px] text-[var(--color-fg)]">{r.f}</td>
                   <td className="px-3 py-3 text-center">
                     <Cell v={r.us} />
