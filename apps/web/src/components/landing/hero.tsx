@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles, MessageSquare, TrendingUp, Target, PiggyBank, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BRAND } from "@/lib/brand";
 import { BentoCard, Sparkline, ProgressRing, Donut, PulseDot } from "./bento";
+import { BRAND } from "@/lib/brand";
+import { getPricing } from "@/lib/pricing";
 
 const SALDO_SERIES = [82, 78, 91, 86, 102, 95, 110, 118, 112, 124];
 
@@ -13,7 +14,10 @@ const CATEGORIA_SLICES = [
   { label: "Outros", value: 17, color: "var(--color-fg-subtle)" },
 ];
 
-export function Hero() {
+export async function Hero() {
+  const pricing = await getPricing();
+  const monthlyFmt = (pricing.monthlyCents / 100)
+    .toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return (
     <section className="relative overflow-hidden">
       {/* gradientes vivos no fundo */}
@@ -56,7 +60,7 @@ export function Hero() {
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg" className="group shadow-pop">
                 <Link href="/assinar">
-                  Começar agora — R$ {BRAND.pricing.monthlyBRL.toFixed(2).replace(".", ",")}/mês
+                  Começar agora — R$ {monthlyFmt}/mês
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
               </Button>

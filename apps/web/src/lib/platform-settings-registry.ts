@@ -154,6 +154,28 @@ export const SETTINGS_REGISTRY: SettingDef[] = [
     placeholder: "Saf Finanças <no-reply@saffinancas.com.br>",
   },
 
+  // --- Preços (edite via UI dedicada em /admin/cobranca/precos) ---
+  {
+    key: "pricing.monthly_cents",
+    envVar: "PRICING_MONTHLY_CENTS",
+    label: "Mensalidade (centavos)",
+    category: "payments",
+    description: "Preço do plano mensal em centavos. Use /admin/cobranca/precos pra editar com preview.",
+    sensitive: false,
+    readonly: false,
+    placeholder: "2990",
+  },
+  {
+    key: "pricing.annual_discount_pct",
+    envVar: "PRICING_ANNUAL_DISCOUNT_PCT",
+    label: "Desconto anual (%)",
+    category: "payments",
+    description: "Desconto aplicado sobre 12× mensal pro plano anual (0-95).",
+    sensitive: false,
+    readonly: false,
+    placeholder: "20",
+  },
+
   // --- Pagamentos ---
   {
     key: "pagarme.api_key",

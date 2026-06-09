@@ -1,9 +1,12 @@
+import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { db, schema } from "@cofre/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Wallet, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Wallet, CheckCircle2, Clock, AlertTriangle, Tag } from "lucide-react";
 import { PageHeader, StatCard, Section } from "@/components/ui/page-header";
+import { getPricing } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +33,8 @@ export default async function AdminCobrancaPage() {
     blocked: all.filter((r) => r.status === "blocked").length,
   };
 
-  const monthlyPrice = 29.9;
+  const pricing = await getPricing();
+  const monthlyPrice = pricing.monthlyCents / 100;
   const mrr = summary.active * monthlyPrice;
   const atRisk = summary.pastDue + summary.blocked;
 
@@ -45,6 +49,13 @@ export default async function AdminCobrancaPage() {
         }
         description="Tudo veio de webhooks do Pagar.me (ou simulações locais enquanto o adapter está em modo sim)."
         tone="primary"
+        actions={
+          <Button asChild variant="secondary">
+            <Link href="/admin/cobranca/precos">
+              <Tag className="h-4 w-4" /> Preços
+            </Link>
+          </Button>
+        }
       />
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">

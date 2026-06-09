@@ -69,10 +69,15 @@ export async function attachCardAndActivate(card: CardSim): Promise<{ ok: true }
 }
 
 export async function getPricingForBrand() {
+  const { getPricing } = await import("@/lib/pricing");
+  const p = await getPricing();
   return {
-    monthly: BRAND.pricing.monthlyBRL,
-    annual: BRAND.pricing.annualBRL,
-    trialDays: BRAND.pricing.trialDays,
+    monthly: p.monthlyCents / 100,
+    annual: p.annualCents / 100,
+    annualEquivalent: p.annualEquivalentCents / 100,
+    annualDiscountPct: p.annualDiscountPct,
+    annualSavings: p.annualSavingsCents / 100,
+    trialDays: p.trialDays,
     mode: await pagarmeMode(),
   };
 }

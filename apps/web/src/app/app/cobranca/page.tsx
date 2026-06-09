@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader, StatCard } from "@/components/ui/page-header";
 import { PulseDot } from "@/components/ui/bento";
 import { BRAND } from "@/lib/brand";
+import { getPricing } from "@/lib/pricing";
 import { CalendarClock, CreditCard, ShieldCheck, Sparkles } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -27,10 +28,12 @@ export default async function CobrancaPage() {
     .limit(1);
 
   const state = describeSubscription(sub);
+  const pricing = await getPricing();
+  const monthlyBRL = pricing.monthlyCents / 100;
 
   const tone = toneForState(state.kind);
   const statusLabel = humanStatus(state.kind);
-  const planPriceBRL = `R$ ${BRAND.pricing.monthlyBRL.toFixed(2).replace(".", ",")}`;
+  const planPriceBRL = `R$ ${monthlyBRL.toFixed(2).replace(".", ",")}`;
   const nextBillingLabel =
     state.kind === "active" && state.nextBillingAt
       ? new Date(state.nextBillingAt).toLocaleDateString("pt-BR")
@@ -79,7 +82,7 @@ export default async function CobrancaPage() {
               <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
                 R$
               </span>
-              {BRAND.pricing.monthlyBRL.toFixed(2).replace(".", ",")}
+              {monthlyBRL.toFixed(2).replace(".", ",")}
             </span>
           }
           icon={<CreditCard className="h-4 w-4" />}
