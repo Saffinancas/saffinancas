@@ -35,12 +35,14 @@ export function WhatsappClient({ initial }: { initial: WaSessionView }) {
   const [view, setView] = React.useState(initial);
   const [loading, setLoading] = React.useState<string | null>(null);
 
-  // Polling: 3s pra web_js (QR), 5s pra webhook providers (aguarda vincular)
+  // Polling: 3s pra QR, 5s pra fluxos via "vincular CODIGO"
   React.useEffect(() => {
-    const isWebhook = view.provider === "twilio_sandbox" || view.provider === "twilio_production" || view.provider === "meta_cloud";
-    const shouldPoll =
-      (view.provider === "web_js" && (view.status === "qr_pending" || view.status === "connected")) ||
-      (isWebhook && view.status === "qr_pending");
+    const isWebhook =
+      view.provider === "twilio_sandbox" ||
+      view.provider === "twilio_production" ||
+      view.provider === "meta_cloud" ||
+      view.provider === "web_js";
+    const shouldPoll = isWebhook && view.status === "qr_pending";
     if (!shouldPoll) return;
     const interval = setInterval(async () => {
       try {
@@ -74,8 +76,13 @@ export function WhatsappClient({ initial }: { initial: WaSessionView }) {
     }
   }
 
+  // web_js também usa o flow "salva número + vincular CODIGO no grupo" (Saf
+  // global é compartilhado entre todas as famílias) — UI igual aos webhook providers.
   const isWebhook =
-    view.provider === "twilio_sandbox" || view.provider === "twilio_production" || view.provider === "meta_cloud";
+    view.provider === "twilio_sandbox" ||
+    view.provider === "twilio_production" ||
+    view.provider === "meta_cloud" ||
+    view.provider === "web_js";
 
   const connected = view.status === "connected" && Boolean(view.monitoredGroupId);
 
@@ -152,8 +159,13 @@ function UnpairedCard({
   onStart: () => void;
   loading: boolean;
 }) {
+  // web_js também usa o flow "salva número + vincular CODIGO no grupo" (Saf
+  // global é compartilhado entre todas as famílias) — UI igual aos webhook providers.
   const isWebhook =
-    view.provider === "twilio_sandbox" || view.provider === "twilio_production" || view.provider === "meta_cloud";
+    view.provider === "twilio_sandbox" ||
+    view.provider === "twilio_production" ||
+    view.provider === "meta_cloud" ||
+    view.provider === "web_js";
   return (
     <Card>
       <CardHeader>

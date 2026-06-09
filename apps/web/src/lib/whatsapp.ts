@@ -206,15 +206,16 @@ export async function requestPairing(): Promise<WaSessionView> {
   const familyId = await getFamilyId();
   const providerId = await getActiveProviderId();
 
-  // Providers webhook-based geram link code, não QR
-  if (providerId === "twilio_sandbox" || providerId === "twilio_production" || providerId === "meta_cloud") {
+  // Providers que usam número-bot compartilhado (webhook ou Saf global) geram
+  // linkCode. O cliente final NÃO pareia nada — só adiciona o número Saf no
+  // grupo dele e manda `vincular CODIGO` lá.
+  if (
+    providerId === "twilio_sandbox" ||
+    providerId === "twilio_production" ||
+    providerId === "meta_cloud" ||
+    providerId === "web_js"
+  ) {
     return generateLinkCode();
-  }
-
-  if (providerId === "web_js") {
-    await workerFetch(`/sessions/${familyId}/pair`, { method: "POST" });
-    revalidatePath("/app/whatsapp");
-    return getSessionView();
   }
 
   // Modo sim

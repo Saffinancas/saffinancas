@@ -1,27 +1,60 @@
 import type { WhatsappProvider } from "../types";
 
 /**
- * Adapter para whatsapp-web.js (worker no Fly.io). Mantido por compat —
- * lógica de pair/listGroups continua em apps/web/src/lib/whatsapp.ts.
+ * Adapter para whatsapp-web.js operando no MODELO SAF GLOBAL — 1 número Saf
+ * pareado no worker entra em todos os grupos das famílias. Cada família vê só:
+ *  - o número Saf pra salvar e adicionar no grupo
+ *  - um linkCode de 6 caracteres pra mandar no grupo (`vincular ABC123`)
  *
- * No fluxo unificado, web_js NÃO recebe via webhook — o worker conecta no
- * banco diretamente. `sendMessage` aqui pode ser implementado depois se
- * quisermos que a IA responda no grupo.
+ * Comportamento de UI igual aos providers webhook (Twilio/Meta), mas a captura
+ * acontece pelo whatsapp-web.js no worker — pareamento operacional do chip
+ * Saf é feito em /admin/integracoes/whatsapp/saf-session.
  */
+
+const WORKER_URL = process.env.WHATSAPP_WORKER_URL ?? "";
+const WORKER_SECRET = process.env.WHATSAPP_WORKER_SECRET ?? "";
+
 export const webJsProvider: WhatsappProvider = {
   id: "web_js",
   capabilities: {
     supportsGroups: true,
-    needsQrPairing: true,
-    receivesViaWebhook: false,
-    canSendMessages: false,
+    // Modelo Saf global: cliente final NUNCA pareia. Só o admin pareia o chip
+    // Saf uma vez na vida do produto.
+    needsQrPairing: false,
+    receivesViaWebhook: true,
+    canSendMessages: true,
     pairingInstructions:
-      "Pareie o WhatsApp Web escaneando o QR. O bot fica conectado enquanto seu celular estiver online — pode precisar reescaniar a cada semanas.",
+      "Salve o número Saf no celular, adicione no grupo da família e mande `vincular CODIGO` lá no grupo. Pronto — todo gasto vira transação.",
   },
-  async sendMessage() {
-    throw new Error("web_js.sendMessage não implementado — IA é silenciosa neste provider.");
+  async sendMessage({ to, body }) {
+    if (!WORKER_URL || !WORKER_SECRET) {
+      throw new Error("Worker não configurado — WHATSAPP_WORKER_URL/SECRET ausentes.");
+    }
+    const res = await fetch(`${WORKER_URL.replace(/\/$/, "")}/saf-session/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${WORKER_SECRET}`,
+      },
+      body: JSON.stringify({ to, body }),
+    });
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      throw new Error(`Worker /saf-session/send ${res.status}: ${t.slice(0, 200)}`);
+    }
   },
   async getBotIdentifier() {
-    return null;
+    if (!WORKER_URL || !WORKER_SECRET) return null;
+    try {
+      const res = await fetch(`${WORKER_URL.replace(/\/$/, "")}/saf-session/status`, {
+        headers: { Authorization: `Bearer ${WORKER_SECRET}` },
+        cache: "no-store",
+      });
+      if (!res.ok) return null;
+      const data = (await res.json()) as { pairedPhone?: string | null };
+      return data.pairedPhone ?? null;
+    } catch {
+      return null;
+    }
   },
 };
