@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader, Section } from "@/components/ui/page-header";
 import { BentoCard, PulseDot } from "@/components/ui/bento";
 import { getSafStatus, listSafGroups } from "@/lib/saf-whatsapp";
+import { PurgeLegacyButton } from "./purge-button";
 
 export const dynamic = "force-dynamic";
 
@@ -184,6 +185,8 @@ export default async function WhatsappDiagnosticoPage() {
           )}
         </BentoCard>
       </div>
+
+      <PurgeLegacyButton />
 
       <Section
         eyebrow="Banco"

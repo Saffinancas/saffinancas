@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { eq, ne } from "drizzle-orm";
 import { db, schema } from "@cofre/db";
 import { sessionManager } from "../wa/manager.js";
+import { SAF_GLOBAL_ID } from "../wa/session.js";
 import { log } from "../log.js";
 
 export const sessionsRouter: Router = Router();
@@ -15,6 +16,19 @@ sessionsRouter.post("/:familyId/pair", async (req, res) => {
   await ensureSessionRowExists(familyId);
   const session = await sessionManager.getOrCreate(familyId);
   res.json(stateView(session));
+});
+
+/** GET /sessions  →  lista todas as sessões ativas no worker (memória) */
+sessionsRouter.get("/", (_req, res) => {
+  const list = sessionManager.list();
+  res.json({
+    sessions: list.map((s) => ({
+      familyId: s.familyId,
+      status: s.state.status,
+      pairedPhone: s.state.pairedPhone,
+      isSafGlobal: s.familyId === SAF_GLOBAL_ID,
+    })),
+  });
 });
 
 /** GET /sessions/:familyId  →  estado atual */
@@ -80,6 +94,38 @@ sessionsRouter.delete("/:familyId", async (req, res) => {
     })
     .where(eq(schema.whatsappSessions.familyId, familyId));
   res.json({ ok: true });
+});
+
+/**
+ * POST /sessions/purge-legacy  → mata TODAS as sessões whatsapp-web.js que
+ * não são a Saf global. Útil pra limpar sessões legadas de quando cada família
+ * pareava o próprio WhatsApp, e agora só a Saf global é usada.
+ */
+sessionsRouter.post("/purge-legacy", async (_req, res) => {
+  const list = sessionManager.list();
+  const removed: string[] = [];
+  for (const s of list) {
+    if (s.familyId === SAF_GLOBAL_ID) continue;
+    await sessionManager.remove(s.familyId);
+    removed.push(s.familyId);
+  }
+  // Também marca como unpaired no DB pra restorePersistentSessions não restaurar de novo
+  if (removed.length) {
+    await db
+      .update(schema.whatsappSessions)
+      .set({
+        status: "unpaired",
+        pairedPhone: null,
+        monitoredGroupId: null,
+        monitoredGroupName: null,
+        qrPayload: null,
+        qrExpiresAt: null,
+        updatedAt: new Date(),
+      })
+      .where(ne(schema.whatsappSessions.familyId, SAF_GLOBAL_ID));
+  }
+  log.info({ removed }, "purge-legacy concluído");
+  res.json({ ok: true, removed });
 });
 
 function stateView(session: ReturnType<typeof sessionManager.get> & object) {
