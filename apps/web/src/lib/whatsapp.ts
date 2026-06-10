@@ -92,23 +92,21 @@ export async function getSessionView(): Promise<WaSessionView> {
     .where(eq(schema.whatsappSessions.familyId, familyId))
     .limit(1);
 
-  // Se o worker está rodando, ele é a fonte de verdade pro status+QR.
-  // Mesclamos com o DB pra trazer grupo monitorado.
+  const providerId = await getActiveProviderId();
+
+  // Se o worker está rodando E o provider é web_js POR-FAMÍLIA (modelo legado,
+  // hoje não usado), ele é a fonte de verdade pro status+QR. No modelo Saf
+  // global (atual) NÃO consultamos sessão por família — o status fica no DB.
   let workerState: {
     status: string;
     qrDataUrl: string | null;
     qrExpiresAt: string | null;
     pairedPhone: string | null;
   } | null = null;
-  if (MODE === "real" && WORKER_URL) {
-    try {
-      workerState = await workerFetch(`/sessions/${familyId}`);
-    } catch {
-      workerState = null;
-    }
-  }
+  // (intencionalmente desativado pro fluxo Saf global; mantemos var por
+  // compat caso voltemos ao pareamento por família)
+  void workerState;
 
-  const providerId = await getActiveProviderId();
   const provider = await getActiveProvider();
   const caps = provider.capabilities;
   const botIdentifier = await provider.getBotIdentifier().catch(() => null);
@@ -117,7 +115,7 @@ export async function getSessionView(): Promise<WaSessionView> {
       ? await getPlatformSetting("whatsapp.twilio.sandbox_join_code")
       : null;
 
-  if (!s && !workerState) {
+  if (!s) {
     return {
       status: "unpaired",
       qrPayload: null,
@@ -138,21 +136,23 @@ export async function getSessionView(): Promise<WaSessionView> {
     };
   }
 
-  const status = workerState ? mapWorkerStatus(workerState.status) : s?.status ?? "unpaired";
+  // No fluxo Saf global, status vem do DB (qr_pending/connected/unpaired).
+  // O linkCode + monitoredGroupId do DB são a fonte de verdade.
+  const status = s.status;
   return {
     status,
-    qrPayload: s?.qrPayload ?? null,
-    qrDataUrl: workerState?.qrDataUrl ?? null,
-    qrExpiresAt: workerState?.qrExpiresAt ?? s?.qrExpiresAt?.toISOString() ?? null,
-    pairedPhone: workerState?.pairedPhone ?? s?.pairedPhone ?? null,
-    monitoredGroupId: s?.monitoredGroupId ?? null,
-    monitoredGroupName: s?.monitoredGroupName ?? null,
+    qrPayload: s.qrPayload ?? null,
+    qrDataUrl: null,
+    qrExpiresAt: s.qrExpiresAt?.toISOString() ?? null,
+    pairedPhone: s.pairedPhone ?? botIdentifier,
+    monitoredGroupId: s.monitoredGroupId ?? null,
+    monitoredGroupName: s.monitoredGroupName ?? null,
     mode: MODE,
     provider: providerId,
     pairingInstructions: caps.pairingInstructions,
     botIdentifier,
-    linkCode: s?.linkCode ?? null,
-    linkCodeExpiresAt: s?.linkCodeExpiresAt?.toISOString() ?? null,
+    linkCode: s.linkCode ?? null,
+    linkCodeExpiresAt: s.linkCodeExpiresAt?.toISOString() ?? null,
     needsQrPairing: caps.needsQrPairing,
     supportsGroups: caps.supportsGroups,
     sandboxJoinCode,
