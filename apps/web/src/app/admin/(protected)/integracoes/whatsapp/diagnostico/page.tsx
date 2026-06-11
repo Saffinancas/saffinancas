@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader, Section } from "@/components/ui/page-header";
 import { BentoCard, PulseDot } from "@/components/ui/bento";
-import { getSafStatus, listSafGroups } from "@/lib/saf-whatsapp";
+import { getSafStatus, listSafGroups, listSafEvents } from "@/lib/saf-whatsapp";
 import { PurgeLegacyButton } from "./purge-button";
 
 export const dynamic = "force-dynamic";
@@ -40,10 +40,11 @@ export default async function WhatsappDiagnosticoPage() {
   if (!session) redirect("/admin/login");
   if ((session.user as { role?: string }).role !== "admin") redirect("/admin");
 
-  const [health, safStatus, safGroups, sessions, links, recentMessages] = await Promise.all([
+  const [health, safStatus, safGroups, safEvents, sessions, links, recentMessages] = await Promise.all([
     workerHealth(),
     getSafStatus(),
     listSafGroups(),
+    listSafEvents(),
     db
       .select()
       .from(schema.whatsappSessions)
@@ -187,6 +188,71 @@ export default async function WhatsappDiagnosticoPage() {
       </div>
 
       <PurgeLegacyButton />
+
+      <Section
+        eyebrow="Worker · ao vivo"
+        title="Últimos 30 eventos do WhatsApp Web (sessão Saf)"
+        description="Cada message_create que a sessão Saf viu. Se mandou no grupo e nada aparece aqui, o WhatsApp Web não recebeu — sessão está degradada."
+      >
+        <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-soft">
+          <table className="w-full min-w-[700px] text-left text-xs">
+            <thead>
+              <tr className="border-b border-[var(--color-border)] text-[var(--color-fg-subtle)]">
+                <th className="px-3 py-2 font-medium">quando</th>
+                <th className="px-3 py-2 font-medium">de</th>
+                <th className="px-3 py-2 font-medium">grupo?</th>
+                <th className="px-3 py-2 font-medium">fromMe</th>
+                <th className="px-3 py-2 font-medium">tipo</th>
+                <th className="px-3 py-2 font-medium">texto</th>
+                <th className="px-3 py-2 font-medium">ação</th>
+                <th className="px-3 py-2 font-medium">família</th>
+              </tr>
+            </thead>
+            <tbody>
+              {safEvents && "events" in safEvents && safEvents.events.length > 0 ? (
+                safEvents.events.map((e, i) => (
+                  <tr key={i} className="border-b border-[var(--color-border)] last:border-b-0">
+                    <td className="px-3 py-2 text-[var(--color-fg-muted)]">
+                      {new Date(e.ts).toLocaleTimeString("pt-BR")}
+                    </td>
+                    <td className="px-3 py-2 font-mono text-[10px] max-w-[140px] truncate">
+                      {e.from}
+                    </td>
+                    <td className="px-3 py-2">{e.isGroup ? "✓" : "—"}</td>
+                    <td className="px-3 py-2">{e.fromMe ? "✓" : "—"}</td>
+                    <td className="px-3 py-2">{e.type}</td>
+                    <td className="px-3 py-2 max-w-[220px] truncate">{e.bodyPreview}</td>
+                    <td className="px-3 py-2">
+                      <Badge
+                        variant={
+                          e.action === "enqueued"
+                            ? "income"
+                            : e.action === "error"
+                              ? "expense"
+                              : "default"
+                        }
+                      >
+                        {e.action}
+                      </Badge>
+                    </td>
+                    <td className="px-3 py-2 font-mono text-[10px]">
+                      {e.resolvedFamilyId ?? "—"}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={8} className="px-3 py-4 text-center text-[var(--color-fg-muted)]">
+                    {safEvents && "error" in safEvents
+                      ? safEvents.error
+                      : "Nenhum evento ainda. Mande uma mensagem no grupo onde o Saf está."}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Section>
 
       <Section
         eyebrow="Banco"

@@ -122,6 +122,19 @@ safSessionRouter.post("/send", async (req, res) => {
 });
 
 /**
+ * Últimos 30 eventos message_create vistos pela sessão Saf. Pra debug do
+ * /admin/integracoes/whatsapp/diagnostico — sem precisar de fly logs.
+ */
+safSessionRouter.get("/events", (_req, res) => {
+  const session = sessionManager.get(SAF_GLOBAL_ID);
+  if (!session) {
+    res.json({ events: [] });
+    return;
+  }
+  res.json({ events: session.events });
+});
+
+/**
  * Lista grupos onde a sessão Saf está presente. Útil pra debug.
  */
 safSessionRouter.get("/groups", async (_req, res) => {

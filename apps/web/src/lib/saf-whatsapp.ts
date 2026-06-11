@@ -105,6 +105,33 @@ export async function listSafGroups(): Promise<
   return { ok: true, groups: r.data.groups };
 }
 
+export type SafEvent = {
+  ts: string;
+  from: string;
+  fromMe: boolean;
+  isGroup: boolean;
+  type: string;
+  bodyPreview: string;
+  action:
+    | "enqueued"
+    | "skipped_no_body"
+    | "skipped_not_group"
+    | "skipped_not_monitored"
+    | "error";
+  resolvedFamilyId: string | null;
+  note?: string;
+};
+
+export async function listSafEvents(): Promise<
+  { ok: true; events: SafEvent[] } | { ok: false; error: string }
+> {
+  const r = await workerFetch<{ events: SafEvent[] }>("/saf-session/events", {
+    method: "GET",
+  });
+  if (!r.ok) return { ok: false, error: r.error };
+  return { ok: true, events: r.data.events };
+}
+
 export async function sendSafMessage(
   to: string,
   body: string,

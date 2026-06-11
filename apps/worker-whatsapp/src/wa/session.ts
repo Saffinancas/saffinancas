@@ -33,10 +33,24 @@ export type SessionState = {
   pairedPhone: string | null;
 };
 
+export type EventTrace = {
+  ts: string;
+  from: string;
+  fromMe: boolean;
+  isGroup: boolean;
+  type: string;
+  bodyPreview: string;
+  action: "enqueued" | "skipped_no_body" | "skipped_not_group" | "skipped_not_monitored" | "error";
+  resolvedFamilyId: string | null;
+  note?: string;
+};
+
 export class WaSession {
   readonly familyId: string;
   private client: WAClient | null = null;
   state: SessionState;
+  /** Ring buffer dos últimos 30 eventos message_create vistos. Pra debug no admin. */
+  readonly events: EventTrace[] = [];
 
   constructor(familyId: string) {
     this.familyId = familyId;
@@ -48,6 +62,11 @@ export class WaSession {
       qrExpiresAt: null,
       pairedPhone: null,
     };
+  }
+
+  private trace(ev: EventTrace): void {
+    this.events.unshift(ev);
+    if (this.events.length > 30) this.events.pop();
   }
 
   async start(): Promise<void> {
@@ -136,14 +155,27 @@ export class WaSession {
    *    grupo monitorado.
    */
   private async handleIncomingMessage(msg: Message): Promise<void> {
-    if (!msg.body || msg.body.length === 0) return;
-
     const isSafGlobal = this.familyId === SAF_GLOBAL_ID;
     const isGroup = msg.from.endsWith("@g.us");
+    const baseTrace: Omit<EventTrace, "action" | "resolvedFamilyId" | "note"> = {
+      ts: new Date().toISOString(),
+      from: msg.from,
+      fromMe: !!msg.fromMe,
+      isGroup,
+      type: msg.type ?? "unknown",
+      bodyPreview: (msg.body ?? "").slice(0, 80),
+    };
+
+    if (!msg.body || msg.body.length === 0) {
+      this.trace({ ...baseTrace, action: "skipped_no_body", resolvedFamilyId: null });
+      return;
+    }
 
     if (isSafGlobal) {
-      // Saf só escuta grupos (DMs ignoradas).
-      if (!isGroup) return;
+      if (!isGroup) {
+        this.trace({ ...baseTrace, action: "skipped_not_group", resolvedFamilyId: null });
+        return;
+      }
 
       let resolvedFamilyId: string | null = null;
       try {
@@ -155,19 +187,40 @@ export class WaSession {
         resolvedFamilyId = link?.familyId ?? null;
       } catch (err) {
         log.error({ err }, "lookup group link falhou");
+        this.trace({
+          ...baseTrace,
+          action: "error",
+          resolvedFamilyId: null,
+          note: err instanceof Error ? err.message : String(err),
+        });
+        return;
       }
 
-      const contact = await msg.getContact().catch(() => null);
-      await enqueueMessage({
-        familyId: resolvedFamilyId ?? SAF_GLOBAL_ID,
-        waMessageId: msg.id._serialized,
-        waChatId: msg.from,
-        senderPhone: contact?.number ? `+${contact.number}` : msg.author ?? msg.from,
-        senderName: contact?.pushname ?? contact?.name ?? null,
-        body: msg.body,
-        mediaType: msg.hasMedia ? msg.type : null,
-        receivedAt: new Date(msg.timestamp * 1000).toISOString(),
-      });
+      try {
+        const contact = await msg.getContact().catch(() => null);
+        await enqueueMessage({
+          familyId: resolvedFamilyId ?? SAF_GLOBAL_ID,
+          waMessageId: msg.id._serialized,
+          waChatId: msg.from,
+          senderPhone: contact?.number ? `+${contact.number}` : msg.author ?? msg.from,
+          senderName: contact?.pushname ?? contact?.name ?? null,
+          body: msg.body,
+          mediaType: msg.hasMedia ? msg.type : null,
+          receivedAt: new Date(msg.timestamp * 1000).toISOString(),
+        });
+        this.trace({
+          ...baseTrace,
+          action: "enqueued",
+          resolvedFamilyId: resolvedFamilyId ?? SAF_GLOBAL_ID,
+        });
+      } catch (err) {
+        this.trace({
+          ...baseTrace,
+          action: "error",
+          resolvedFamilyId: resolvedFamilyId ?? SAF_GLOBAL_ID,
+          note: err instanceof Error ? err.message : String(err),
+        });
+      }
       return;
     }
 
@@ -178,19 +231,37 @@ export class WaSession {
       .limit(1);
 
     const monitored = session?.groupId;
-    if (!monitored || msg.from !== monitored) return;
+    if (!monitored || msg.from !== monitored) {
+      this.trace({
+        ...baseTrace,
+        action: "skipped_not_monitored",
+        resolvedFamilyId: this.familyId,
+        note: `monitored=${monitored ?? "null"}`,
+      });
+      return;
+    }
 
-    const contact = await msg.getContact().catch(() => null);
-    await enqueueMessage({
-      familyId: this.familyId,
-      waMessageId: msg.id._serialized,
-      waChatId: msg.from,
-      senderPhone: contact?.number ? `+${contact.number}` : msg.author ?? msg.from,
-      senderName: contact?.pushname ?? contact?.name ?? null,
-      body: msg.body,
-      mediaType: msg.hasMedia ? msg.type : null,
-      receivedAt: new Date(msg.timestamp * 1000).toISOString(),
-    });
+    try {
+      const contact = await msg.getContact().catch(() => null);
+      await enqueueMessage({
+        familyId: this.familyId,
+        waMessageId: msg.id._serialized,
+        waChatId: msg.from,
+        senderPhone: contact?.number ? `+${contact.number}` : msg.author ?? msg.from,
+        senderName: contact?.pushname ?? contact?.name ?? null,
+        body: msg.body,
+        mediaType: msg.hasMedia ? msg.type : null,
+        receivedAt: new Date(msg.timestamp * 1000).toISOString(),
+      });
+      this.trace({ ...baseTrace, action: "enqueued", resolvedFamilyId: this.familyId });
+    } catch (err) {
+      this.trace({
+        ...baseTrace,
+        action: "error",
+        resolvedFamilyId: this.familyId,
+        note: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 
   /** Envia mensagem texto pra um chat (grupo ou DM). */
