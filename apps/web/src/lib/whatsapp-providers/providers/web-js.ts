@@ -6,20 +6,22 @@ import type { WhatsappProvider } from "../types";
  *  - o número Saf pra salvar e adicionar no grupo
  *  - um linkCode de 6 caracteres pra mandar no grupo (`vincular ABC123`)
  *
- * Comportamento de UI igual aos providers webhook (Twilio/Meta), mas a captura
- * acontece pelo whatsapp-web.js no worker — pareamento operacional do chip
- * Saf é feito em /admin/integracoes/whatsapp/saf-session.
+ * Pareamento operacional do chip Saf em /admin/integracoes/whatsapp/saf-session.
+ *
+ * IMPORTANTE: ler process.env DENTRO das funções (não no top-level) pra evitar
+ * que valores fiquem cacheados em build-time num runtime onde a env ainda não
+ * foi resolvida.
  */
-
-const WORKER_URL = process.env.WHATSAPP_WORKER_URL ?? "";
-const WORKER_SECRET = process.env.WHATSAPP_WORKER_SECRET ?? "";
+function workerEnv() {
+  const url = process.env.WHATSAPP_WORKER_URL ?? "";
+  const secret = process.env.WHATSAPP_WORKER_SECRET ?? "";
+  return { url, secret };
+}
 
 export const webJsProvider: WhatsappProvider = {
   id: "web_js",
   capabilities: {
     supportsGroups: true,
-    // Modelo Saf global: cliente final NUNCA pareia. Só o admin pareia o chip
-    // Saf uma vez na vida do produto.
     needsQrPairing: false,
     receivesViaWebhook: true,
     canSendMessages: true,
@@ -27,14 +29,15 @@ export const webJsProvider: WhatsappProvider = {
       "Salve o número Saf no celular, adicione no grupo da família e mande `vincular CODIGO` lá no grupo. Pronto — todo gasto vira transação.",
   },
   async sendMessage({ to, body }) {
-    if (!WORKER_URL || !WORKER_SECRET) {
+    const { url, secret } = workerEnv();
+    if (!url || !secret) {
       throw new Error("Worker não configurado — WHATSAPP_WORKER_URL/SECRET ausentes.");
     }
-    const res = await fetch(`${WORKER_URL.replace(/\/$/, "")}/saf-session/send`, {
+    const res = await fetch(`${url.replace(/\/$/, "")}/saf-session/send`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${WORKER_SECRET}`,
+        Authorization: `Bearer ${secret}`,
       },
       body: JSON.stringify({ to, body }),
     });
@@ -44,16 +47,24 @@ export const webJsProvider: WhatsappProvider = {
     }
   },
   async getBotIdentifier() {
-    if (!WORKER_URL || !WORKER_SECRET) return null;
+    const { url, secret } = workerEnv();
+    if (!url || !secret) {
+      console.warn("[web-js] getBotIdentifier: WORKER_URL/SECRET ausentes em runtime");
+      return null;
+    }
     try {
-      const res = await fetch(`${WORKER_URL.replace(/\/$/, "")}/saf-session/status`, {
-        headers: { Authorization: `Bearer ${WORKER_SECRET}` },
+      const res = await fetch(`${url.replace(/\/$/, "")}/saf-session/status`, {
+        headers: { Authorization: `Bearer ${secret}` },
         cache: "no-store",
       });
-      if (!res.ok) return null;
+      if (!res.ok) {
+        console.warn(`[web-js] getBotIdentifier: /saf-session/status ${res.status}`);
+        return null;
+      }
       const data = (await res.json()) as { pairedPhone?: string | null };
       return data.pairedPhone ?? null;
-    } catch {
+    } catch (err) {
+      console.warn("[web-js] getBotIdentifier fetch failed", err);
       return null;
     }
   },

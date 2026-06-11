@@ -109,7 +109,20 @@ export async function getSessionView(): Promise<WaSessionView> {
 
   const provider = await getActiveProvider();
   const caps = provider.capabilities;
-  const botIdentifier = await provider.getBotIdentifier().catch(() => null);
+  let botIdentifier = await provider.getBotIdentifier().catch(() => null);
+  // Fallback pro modelo Saf global: se o provider não devolveu, busca direto
+  // o pairedPhone via /saf-session/status (mesmo endpoint do diagnóstico).
+  if (!botIdentifier && providerId === "web_js") {
+    try {
+      const { getSafStatus } = await import("@/lib/saf-whatsapp");
+      const status = await getSafStatus();
+      if (status && "pairedPhone" in status) {
+        botIdentifier = status.pairedPhone ?? null;
+      }
+    } catch {
+      // ignore
+    }
+  }
   const sandboxJoinCode =
     providerId === "twilio_sandbox"
       ? await getPlatformSetting("whatsapp.twilio.sandbox_join_code")
