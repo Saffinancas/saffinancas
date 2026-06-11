@@ -27,7 +27,7 @@ const modules: Mod[] = [
     icon: MessageSquare,
     tone: "primary",
     title: "Captura via WhatsApp",
-    desc: "Cada mensagem do grupo com gasto vira transação. IA classifica, você só revisa quando quiser.",
+    desc: "Cada familiar vincula o WhatsApp dele e manda os gastos como já manda. IA classifica, plataforma centraliza tudo na conta da família.",
     badge: "núcleo",
     span: "sm:col-span-2 lg:col-span-2 lg:row-span-2",
     metric: "96%",

@@ -44,17 +44,18 @@ export async function Hero() {
             </div>
 
             <h1 className="mt-5 text-balance text-[2.5rem] leading-[1.04] tracking-tight sm:text-[3.1rem] lg:text-[3.6rem]">
-              O grupo da família{" "}
-              <span className="text-[var(--color-primary)]">no WhatsApp</span>{" "}
-              agora{" "}
-              <span className="display-serif italic">cuida do dinheiro</span>{" "}
-              de vocês.
+              Cada um manda{" "}
+              <span className="text-[var(--color-primary)]">no WhatsApp</span>.{" "}
+              A plataforma{" "}
+              <span className="display-serif italic">centraliza</span>{" "}
+              tudo da família.
             </h1>
 
             <p className="mt-5 max-w-xl text-pretty text-[15.5px] leading-relaxed text-[var(--color-fg-muted)] sm:text-base">
-              Cada mensagem com gasto vira despesa categorizada. Cada Pix
-              recebido vira receita. Sem app pra ninguém aprender, sem planilha
-              pra ninguém preencher.
+              Marido, esposa, mãe, filhos — cada um vincula o WhatsApp dele(a) e
+              manda os gastos como já manda. A IA classifica, o dashboard junta
+              tudo num só lugar. <strong className="text-[var(--color-fg)]">Sem grupo,
+              sem planilha, sem app pra aprender.</strong>
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -136,12 +137,13 @@ export async function Hero() {
                 <Donut slices={CATEGORIA_SLICES} size={84} />
               </BentoCard>
 
-              {/* WhatsApp live capture — span 2 */}
+              {/* WhatsApp live capture — span 2. 3 DMs individuais de membros
+                  diferentes da mesma família, cada uma virou transação. */}
               <BentoCard
                 span="col-span-2"
                 eyebrow={
                   <span className="inline-flex items-center gap-1.5">
-                    <PulseDot color="var(--color-income)" /> AO VIVO · WhatsApp
+                    <PulseDot color="var(--color-income)" /> AO VIVO · 3 membros da família
                   </span>
                 }
                 title={null}
@@ -164,6 +166,15 @@ export async function Hero() {
                     tagTone="income"
                     tagAmount="R$ 1.850,00"
                     tagCategory="Renda extra"
+                  />
+                  <MsgRow
+                    name="Vó Ana"
+                    hue={320}
+                    text="remédio da pressão, 67,40"
+                    time="16:18"
+                    tagTone="expense"
+                    tagAmount="R$ 67,40"
+                    tagCategory="Saúde"
                   />
                 </ul>
               </BentoCard>

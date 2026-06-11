@@ -4,22 +4,22 @@ const steps = [
   {
     n: "01",
     icon: QrCode,
-    title: "Conecta o grupo",
-    desc: "Você lê um QR code com o WhatsApp de quem está no grupo da família. Em segundos, a sessão fica pareada.",
+    title: "Cada membro vincula o WhatsApp dele",
+    desc: "Gera um código de 6 letras na plataforma. Cada familiar manda `vincular CÓDIGO` pro número Saf — do WhatsApp dele(a). Mãe, pai, filho, irmão — todos no mesmo cadastro.",
     accent: "var(--color-primary)",
   },
   {
     n: "02",
     icon: Sparkles,
     title: "A IA classifica tudo",
-    desc: "Cada mensagem vira transação: valor, descrição, categoria. Áudios e comprovantes também — Whisper + OCR fazem o resto.",
+    desc: "Cada mensagem com gasto vira transação: valor, descrição, categoria. Áudios e comprovantes também — Whisper + OCR fazem o resto.",
     accent: "var(--color-income)",
   },
   {
     n: "03",
     icon: LineChart,
-    title: "Você vê o dashboard",
-    desc: "Receita, despesa e resultado em tempo real. Histórico de 12 meses, drill-down por categoria, projeção do mês que vem.",
+    title: "A família vê tudo centralizado",
+    desc: "Receita, despesa e resultado consolidados — não importa quem mandou. Histórico de 12 meses, drill-down por pessoa ou categoria, projeção do mês que vem.",
     accent: "var(--color-warning)",
   },
 ];

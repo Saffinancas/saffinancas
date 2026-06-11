@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db, schema } from "@cofre/db";
 import { auth } from "@/lib/auth";
 import { id } from "@/lib/ids";
@@ -32,6 +32,14 @@ async function getFamilyId(): Promise<string> {
   return u.familyId;
 }
 
+export type WaMemberLink = {
+  id: string;
+  externalChatId: string;
+  /** Nome amigável (push name do contato no WhatsApp ou o número). */
+  displayName: string | null;
+  linkedAt: string;
+};
+
 export type WaSessionView = {
   status: "unpaired" | "qr_pending" | "connected" | "reconnecting" | "disconnected" | "banned";
   qrPayload: string | null;
@@ -54,6 +62,8 @@ export type WaSessionView = {
   supportsGroups: boolean;
   /** Frase "join xxx-yyy" pro sandbox Twilio (só populada quando provider=twilio_sandbox). */
   sandboxJoinCode: string | null;
+  /** Membros da família que vincularam o WhatsApp deles (1 família = N membros). */
+  members: WaMemberLink[];
 };
 
 export type WaGroup = {
@@ -93,6 +103,28 @@ export async function getSessionView(): Promise<WaSessionView> {
     .limit(1);
 
   const providerId = await getActiveProviderId();
+
+  // Lista de membros vinculados — 1 família pode ter N membros (cada um com
+  // seu WhatsApp). Mostra todos pra UI.
+  const linkRows = await db
+    .select({
+      id: schema.whatsappGroupLinks.id,
+      externalChatId: schema.whatsappGroupLinks.externalChatId,
+      chatName: schema.whatsappGroupLinks.chatName,
+      linkedAt: schema.whatsappGroupLinks.linkedAt,
+      archivedAt: schema.whatsappGroupLinks.archivedAt,
+      provider: schema.whatsappGroupLinks.provider,
+    })
+    .from(schema.whatsappGroupLinks)
+    .where(eq(schema.whatsappGroupLinks.familyId, familyId));
+  const members: WaMemberLink[] = linkRows
+    .filter((l) => l.provider === providerId && !l.archivedAt)
+    .map((l) => ({
+      id: l.id,
+      externalChatId: l.externalChatId,
+      displayName: l.chatName,
+      linkedAt: (l.linkedAt ?? new Date()).toISOString(),
+    }));
 
   // Se o worker está rodando E o provider é web_js POR-FAMÍLIA (modelo legado,
   // hoje não usado), ele é a fonte de verdade pro status+QR. No modelo Saf
@@ -146,6 +178,7 @@ export async function getSessionView(): Promise<WaSessionView> {
       needsQrPairing: caps.needsQrPairing,
       supportsGroups: caps.supportsGroups,
       sandboxJoinCode,
+      members,
     };
   }
 
@@ -169,7 +202,24 @@ export async function getSessionView(): Promise<WaSessionView> {
     needsQrPairing: caps.needsQrPairing,
     supportsGroups: caps.supportsGroups,
     sandboxJoinCode,
+    members,
   };
+}
+
+/** Desvincula um membro específico (arquiva o link). */
+export async function unlinkMember(linkId: string): Promise<WaSessionView> {
+  const familyId = await getFamilyId();
+  await db
+    .update(schema.whatsappGroupLinks)
+    .set({ archivedAt: new Date() })
+    .where(
+      and(
+        eq(schema.whatsappGroupLinks.id, linkId),
+        eq(schema.whatsappGroupLinks.familyId, familyId),
+      ),
+    );
+  revalidatePath("/app/whatsapp");
+  return getSessionView();
 }
 
 /**

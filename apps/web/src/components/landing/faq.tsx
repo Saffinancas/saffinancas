@@ -7,7 +7,7 @@ import { BRAND } from "@/lib/brand";
 const items = [
   {
     q: "Vocês leem todas as minhas mensagens?",
-    a: `Só as mensagens do grupo que você escolher. Nada de conversas pessoais, nada de outros grupos. O conteúdo bruto fica criptografado e é descartado após 90 dias — só a transação estruturada (valor, data, categoria) permanece. Você pode pedir exclusão total a qualquer momento — direito garantido pela LGPD.`,
+    a: `Só as mensagens que cada membro vinculado manda diretamente pro número da Saf (DM 1:1). Nada de conversas pessoais, nada de grupos. O conteúdo bruto fica criptografado e é descartado após 90 dias — só a transação estruturada (valor, data, categoria) permanece. Você pode pedir exclusão total a qualquer momento — direito garantido pela LGPD.`,
   },
   {
     q: "Como funciona a parte de investimentos?",
@@ -62,7 +62,7 @@ function FaqItem({ q, a, defaultOpen = false }: { q: string; a: string; defaultO
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-expanded={open ? "true" : "false"}
+        aria-expanded={open}
         className="flex w-full items-center justify-between gap-4 py-5 text-left"
       >
         <span className="text-[15.5px] font-medium text-[var(--color-fg)]">{q}</span>

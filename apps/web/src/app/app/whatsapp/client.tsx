@@ -12,6 +12,7 @@ import {
   Copy,
   PhoneCall,
   MessageCircle,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,12 +26,13 @@ import {
   requestPairing,
   simulateConnect,
   unpair,
+  unlinkMember,
   listGroups,
   selectGroup,
   type WaSessionView,
   type WaGroup,
+  type WaMemberLink,
 } from "@/lib/whatsapp";
-
 export function WhatsappClient({ initial }: { initial: WaSessionView }) {
   const [view, setView] = React.useState(initial);
   const [loading, setLoading] = React.useState<string | null>(null);
@@ -115,16 +117,19 @@ export function WhatsappClient({ initial }: { initial: WaSessionView }) {
         </div>
       )}
 
-      {view.status === "unpaired" || view.status === "disconnected" ? (
+      {isWebhook ? (
+        <>
+          {view.linkCode ? (
+            <LinkCodeCard view={view} onRefresh={start} />
+          ) : (
+            <UnpairedCard view={view} onStart={start} loading={loading === "start"} />
+          )}
+          {view.members.length > 0 && (
+            <MembersCard members={view.members} onUpdate={setView} />
+          )}
+        </>
+      ) : view.status === "unpaired" || view.status === "disconnected" ? (
         <UnpairedCard view={view} onStart={start} loading={loading === "start"} />
-      ) : isWebhook ? (
-        view.linkCode ? (
-          <LinkCodeCard view={view} onRefresh={start} />
-        ) : view.monitoredGroupId ? (
-          <ConnectedCard view={view} onUnpair={disconnect} loading={loading === "unpair"} />
-        ) : (
-          <UnpairedCard view={view} onStart={start} loading={loading === "start"} />
-        )
       ) : view.status === "qr_pending" ? (
         <QrPendingCard view={view} onUpdate={setView} />
       ) : view.status === "connected" ? (
@@ -147,6 +152,75 @@ export function WhatsappClient({ initial }: { initial: WaSessionView }) {
         </Card>
       )}
     </div>
+  );
+}
+
+function MembersCard({
+  members,
+  onUpdate,
+}: {
+  members: WaMemberLink[];
+  onUpdate: (v: WaSessionView) => void;
+}) {
+  const [removing, setRemoving] = React.useState<string | null>(null);
+
+  async function remove(linkId: string, name: string) {
+    if (!confirm(`Desvincular ${name} do WhatsApp? Gastos dele(a) param de virar transação.`)) {
+      return;
+    }
+    setRemoving(linkId);
+    try {
+      const next = await unlinkMember(linkId);
+      onUpdate(next);
+    } finally {
+      setRemoving(null);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-[var(--color-primary)]" />
+            Membros vinculados ({members.length})
+          </CardTitle>
+        </div>
+        <CardDescription>
+          Cada membro da família que mandou <code>vincular CÓDIGO</code> aparece aqui. Tudo
+          que ele(a) mandar pro bot vira transação da família.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ul className="divide-y divide-[var(--color-border)]">
+          {members.map((m) => (
+            <li key={m.id} className="flex items-center justify-between gap-3 py-3">
+              <div className="min-w-0">
+                <p className="num truncate text-sm font-medium">
+                  {m.displayName ?? m.externalChatId}
+                </p>
+                <p className="truncate text-[11px] text-[var(--color-fg-subtle)]">
+                  vinculado em {new Date(m.linkedAt).toLocaleString("pt-BR")}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => remove(m.id, m.displayName ?? m.externalChatId)}
+                disabled={removing === m.id}
+              >
+                {removing === m.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                Desvincular
+              </Button>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -219,16 +293,17 @@ function LinkCodeCard({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <PhoneCall className="h-5 w-5 text-[var(--color-primary)]" />
-          Vincule seu WhatsApp
+          Vincule o WhatsApp de cada membro
         </CardTitle>
         <CardDescription>
-          Siga os passos no celular. Quando o bot receber o código, este cartão atualiza sozinho.
+          O mesmo código vale pra todos os familiares — cada um manda do número
+          dele(a). Tudo cai na conta da família.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <ol className="ml-5 list-decimal space-y-3 text-sm">
           <li>
-            <strong>Salve este número no seu celular:</strong>
+            <strong>Cada familiar salva este número no celular dele(a):</strong>
             <div className="mt-1 flex items-center gap-2">
               <code className="rounded-[var(--radius)] bg-[var(--color-surface-muted)] px-2 py-1 text-sm">
                 {view.botIdentifier ?? "(número não configurado pelo admin)"}
@@ -261,7 +336,7 @@ function LinkCodeCard({
             </li>
           )}
           <li>
-            <strong>Mande esta mensagem</strong> pro bot:
+            <strong>Cada familiar manda esta mensagem</strong> pro bot (do WhatsApp dele/dela):
             <div className="mt-2 flex items-center gap-2 rounded-[var(--radius)] border-2 border-dashed border-[var(--color-primary)]/40 bg-[var(--color-primary-soft)]/30 p-3">
               <code className="text-lg font-bold tracking-wider">vincular {view.linkCode}</code>
               <Button variant="ghost" size="sm" onClick={copyCode}>

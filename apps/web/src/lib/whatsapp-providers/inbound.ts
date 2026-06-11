@@ -128,15 +128,16 @@ async function tryLinkByCode(
       },
     });
 
-  // Limpa o code (one-time use) e marca sessão como conectada
+  // Mantém o code válido pra OUTROS familiares vincularem (1 família = N membros).
+  // Renova a expiração pra mais 1h sempre que alguém usa, dando janela ampla
+  // de onboarding. Marca a sessão como "connected" (pelo menos 1 vínculo).
+  // pairedPhone fica com o primeiro número vinculado (apenas como display).
+  const renewedExpiry = new Date(Date.now() + 60 * 60 * 1000);
   await db
     .update(schema.whatsappSessions)
     .set({
       status: "connected",
-      linkCode: null,
-      linkCodeExpiresAt: null,
-      monitoredGroupId: msg.externalChatId,
-      monitoredGroupName: msg.groupName ?? null,
+      linkCodeExpiresAt: renewedExpiry,
       pairedPhone: msg.senderPhone,
       provider: providerId,
       lastSeenAt: new Date(),
