@@ -194,6 +194,27 @@ export async function processClassifyJob(job: ClassifyJob): Promise<void> {
     .set({ processedAt: new Date() })
     .where(eq(schema.whatsappMessages.id, rawId));
 
+  // Confirmação no WhatsApp do membro: "✓ Lancei -R$ X,XX (descrição)".
+  // Mesmo formato que o pipeline web (inbound.ts:298). Best-effort: se sessão
+  // Saf não está conectada ou send falha, só loga — não retenta o job.
+  try {
+    const session = sessionManager.get(SAF_GLOBAL_ID);
+    if (session && session.state.status === "connected") {
+      const sign = draft.type === "expense" ? "−" : "+";
+      const valor = (draft.amount_cents / 100).toLocaleString("pt-BR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+      const desc = draft.description ?? draft.category_suggestion ?? "sem descrição";
+      await session.sendText(
+        job.waChatId,
+        `✓ Lancei ${sign}R$ ${valor} (${desc}).`,
+      );
+    }
+  } catch (err) {
+    log.warn({ err, familyId: job.familyId }, "Falha ao mandar confirmação WhatsApp");
+  }
+
   log.info(
     {
       familyId: job.familyId,
