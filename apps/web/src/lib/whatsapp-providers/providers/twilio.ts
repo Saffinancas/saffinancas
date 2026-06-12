@@ -29,13 +29,44 @@ async function getCredentials(): Promise<{ sid: string; token: string; from: str
   return { sid, token, from };
 }
 
+/**
+ * WhatsApp BR exige o nono dígito nos celulares (`+55<DDD>9<8d>` = 13 dígitos
+ * depois do +). Twilio sometimes entrega webhook inbound já sem o 9 — e se
+ * a gente devolve sem 9 no `To`, Meta rejeita com error 63112 ("recipient
+ * unable to receive"). Esta função adiciona o 9 onde falta.
+ */
+export function normalizeBrazilianMobile(raw: string): string {
+  if (!raw) return raw;
+  // Mantém prefixo whatsapp: se vier
+  const prefix = raw.startsWith("whatsapp:") ? "whatsapp:" : "";
+  const digits = raw.replace(/^whatsapp:/, "").replace(/[^\d+]/g, "");
+  // Só normaliza BR (DDI 55)
+  if (!digits.startsWith("+55")) return prefix ? prefix + digits : digits;
+  // Móvel BR completo já tem 13 dígitos após `+`: `+55 DD 9XXXX-XXXX`
+  // Sem o 9 vira 12 dígitos. Adiciona o 9 depois do DDD.
+  const body = digits.slice(3); // remove "+55"
+  if (body.length === 11 && body[2] && /^[6-9]$/.test(body[2])) {
+    // Já tem 9 (move primeiro dígito do número é 6/7/8/9 = móvel)
+    return `${prefix}+55${body}`;
+  }
+  if (body.length === 10 && body[2] && /^[6-9]$/.test(body[2])) {
+    // 10 dígitos: DDD + 8d (sem 9). Adiciona o 9.
+    const ddd = body.slice(0, 2);
+    const rest = body.slice(2);
+    return `${prefix}+55${ddd}9${rest}`;
+  }
+  return prefix ? prefix + digits : digits;
+}
+
 async function twilioSend({ to, body }: SendMessageInput): Promise<void> {
   const { sid, token, from } = await getCredentials();
   const url = `${API_BASE}/Accounts/${sid}/Messages.json`;
+  // Normaliza nono dígito de móvel BR (Twilio pode entregar sem ele no inbound).
+  const normalized = normalizeBrazilianMobile(to);
+  const finalTo = normalized.startsWith("whatsapp:") ? normalized : `whatsapp:${normalized}`;
   const params = new URLSearchParams();
   params.set("From", from);
-  // Twilio espera o `whatsapp:` prefix em ambos
-  params.set("To", to.startsWith("whatsapp:") ? to : `whatsapp:${to}`);
+  params.set("To", finalTo);
   params.set("Body", body);
 
   const res = await fetch(url, {
