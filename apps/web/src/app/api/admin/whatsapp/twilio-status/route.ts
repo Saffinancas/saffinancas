@@ -30,6 +30,33 @@ export async function GET(): Promise<Response> {
 
   const authHeader = "Basic " + Buffer.from(`${sid}:${token}`).toString("base64");
 
+  // 0. account info (status, type=Trial/Full)
+  let accountInfo: { friendly_name?: string; status?: string; type?: string } | null = null;
+  try {
+    const r = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${sid}.json`,
+      { headers: { Authorization: authHeader } },
+    );
+    if (r.ok) accountInfo = await r.json();
+  } catch {
+    // ignore
+  }
+
+  // 0b. verified caller ids (necessário em trial)
+  let verifiedNumbers: Array<{ phone_number: string; friendly_name: string }> = [];
+  try {
+    const r = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${sid}/OutgoingCallerIds.json`,
+      { headers: { Authorization: authHeader } },
+    );
+    if (r.ok) {
+      const j = (await r.json()) as { outgoing_caller_ids: typeof verifiedNumbers };
+      verifiedNumbers = j.outgoing_caller_ids ?? [];
+    }
+  } catch {
+    // ignore
+  }
+
   // 1. Phone numbers na conta
   let phoneNumbers: unknown = null;
   let phoneNumbersError: string | null = null;
@@ -75,6 +102,8 @@ export async function GET(): Promise<Response> {
 
   return NextResponse.json({
     accountSid: sid.slice(0, 6) + "..." + sid.slice(-4),
+    accountInfo,
+    verifiedNumbers,
     configuredFrom,
     phoneNumbers,
     phoneNumbersError,
