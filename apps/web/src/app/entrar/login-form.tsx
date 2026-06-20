@@ -38,25 +38,26 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3">
-      <div className="flex flex-col gap-1.5">
+    <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-4" noValidate>
+      <div className="flex flex-col gap-2">
         <Label htmlFor="li-email">E-mail</Label>
         <Input
           id="li-email"
           type="email"
           autoComplete="username"
           required
+          aria-invalid={error ? true : undefined}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <Label htmlFor="li-pwd">Senha</Label>
           <Link
             href="/entrar/esqueceu-senha"
-            className="text-xs text-[var(--color-fg-muted)] underline-offset-4 hover:text-[var(--color-fg)] hover:underline"
+            className="link-underline text-[11px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]"
           >
             Esqueceu a senha?
           </Link>
@@ -66,18 +67,23 @@ export function LoginForm() {
           type="password"
           autoComplete="current-password"
           required
+          aria-invalid={error ? true : undefined}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
       </div>
 
       {error && (
-        <p className="rounded-[var(--radius)] border border-[var(--color-expense)]/30 bg-[var(--color-expense-soft)] px-3 py-2 text-xs text-[var(--color-expense)]">
-          {error}
+        <p
+          role="alert"
+          className="reveal flex items-start gap-2 rounded-[var(--radius)] border border-[var(--color-danger)]/30 bg-[var(--color-danger-soft)] px-3 py-2.5 text-xs leading-relaxed text-[var(--color-danger)]"
+        >
+          <span aria-hidden className="mt-0.5">⚠</span>
+          <span>{error}</span>
         </p>
       )}
 
-      <Button type="submit" disabled={loading} className="mt-2">
+      <Button type="submit" disabled={loading} className="mt-3 shadow-pop">
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         {loading ? "Entrando..." : "Entrar"}
       </Button>

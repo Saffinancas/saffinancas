@@ -351,24 +351,30 @@ export default async function DashboardPage() {
             </Button>
           }
         >
-          <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-soft">
+          <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-soft">
             <ul className="divide-y divide-[var(--color-border)]">
               {data.recent.map((t) => (
                 <li
                   key={t.id}
-                  className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-[var(--color-surface-muted)]/60"
+                  className="group flex items-center justify-between gap-3 px-4 py-3.5 transition-colors duration-150 hover:bg-[var(--color-bg-muted)]/80"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <span
                       aria-hidden
-                      className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--color-surface-muted)] text-base"
+                      className={
+                        "grid h-10 w-10 shrink-0 place-items-center rounded-full text-base transition-transform duration-200 group-hover:scale-110 " +
+                        (t.type === "income"
+                          ? "bg-[var(--color-income-soft)]"
+                          : "bg-[var(--color-surface-muted)]")
+                      }
                     >
                       {iconForCategory(t.categoryName)}
                     </span>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{t.description}</p>
                       <p className="truncate text-[11px] text-[var(--color-fg-subtle)]">
-                        {t.categoryName ?? "Sem categoria"} · {labelForOrigin(t.origin)} ·{" "}
+                        {t.categoryName ?? "Sem categoria"} ·{" "}
+                        {labelForOrigin(t.origin)} ·{" "}
                         {t.occurredAt.toLocaleDateString("pt-BR", {
                           day: "2-digit",
                           month: "short",
@@ -378,7 +384,7 @@ export default async function DashboardPage() {
                   </div>
                   <span
                     className={
-                      "num shrink-0 text-sm font-semibold tabular " +
+                      "ticker shrink-0 text-sm font-semibold " +
                       (t.type === "income"
                         ? "text-[var(--color-income)]"
                         : "text-[var(--color-expense)]")
@@ -399,16 +405,19 @@ export default async function DashboardPage() {
 
 function EmptyState() {
   return (
-    <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-12 text-center shadow-soft">
-      <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[var(--color-primary-soft)] text-[var(--color-primary)]">
-        <Sparkles className="h-6 w-6" />
+    <div className="relative isolate overflow-hidden rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-12 text-center shadow-soft">
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-grain" />
+      <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[var(--color-primary-soft)] text-[var(--color-primary)] shadow-soft">
+        <Sparkles className="h-7 w-7" />
       </span>
-      <h3 className="mt-4 text-lg font-semibold tracking-tight">Vazio por enquanto.</h3>
-      <p className="mx-auto mt-2 max-w-sm text-sm text-[var(--color-fg-muted)]">
-        Conecte o WhatsApp da família ou lance uma transação manualmente. A IA categoriza o
-        resto.
+      <h3 className="mt-5 text-xl font-medium tracking-[-0.01em]">
+        Vazio <span className="display-serif italic font-normal">por enquanto.</span>
+      </h3>
+      <p className="mx-auto mt-2.5 max-w-sm text-sm leading-relaxed text-[var(--color-fg-muted)]">
+        Conecte o WhatsApp da família ou lance uma transação manualmente. A IA
+        categoriza o resto.
       </p>
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
         <Button asChild>
           <Link href="/app/whatsapp">
             <MessageSquare className="h-4 w-4" /> Conectar WhatsApp

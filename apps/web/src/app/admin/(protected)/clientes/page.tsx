@@ -50,20 +50,20 @@ export default async function ClientesPage() {
       ) : (
         <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-soft">
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--color-border)] text-left text-[10px] uppercase tracking-wider text-[var(--color-fg-subtle)]">
-                <th className="px-4 py-2.5 font-medium">Família</th>
-                <th className="px-4 py-2.5 font-medium">Titular</th>
-                <th className="px-4 py-2.5 font-medium">Status</th>
-                <th className="px-4 py-2.5 font-medium">Próx. cobrança</th>
-                <th className="px-4 py-2.5 font-medium">Criada em</th>
+            <thead className="sticky top-14 z-10 bg-[var(--color-surface)]/95 backdrop-blur">
+              <tr className="border-b border-[var(--color-border)] text-left text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-fg-subtle)]">
+                <th className="px-4 py-3">Família</th>
+                <th className="px-4 py-3">Titular</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Próx. cobrança</th>
+                <th className="px-4 py-3">Criada em</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
                 <tr
                   key={r.familyId}
-                  className="cursor-pointer border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-surface-muted)]"
+                  className="group cursor-pointer border-b border-[var(--color-border)] transition-colors duration-150 last:border-b-0 hover:bg-[var(--color-primary-soft)]/30"
                 >
                   <td className="px-4 py-2.5 font-medium">
                     <Link href={`/admin/clientes/${r.familyId}`} className="block">

@@ -64,8 +64,8 @@ export function SignupForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3">
-      <div className="flex flex-col gap-1.5">
+    <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-4" noValidate>
+      <div className="flex flex-col gap-2">
         <Label htmlFor="su-name">Seu nome</Label>
         <Input
           id="su-name"
@@ -77,18 +77,18 @@ export function SignupForm() {
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <Label htmlFor="su-family">Como vocês chamam a família?</Label>
         <Input
           id="su-family"
           required
           value={familyName}
           onChange={(e) => setFamilyName(e.target.value)}
-          placeholder="Família 🏠"
+          placeholder="Família"
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <Label htmlFor="su-email">E-mail</Label>
         <Input
           id="su-email"
@@ -101,7 +101,7 @@ export function SignupForm() {
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <Label htmlFor="su-pwd">Senha</Label>
         <Input
           id="su-pwd"
@@ -115,20 +115,26 @@ export function SignupForm() {
         />
       </div>
 
-      <label className="mt-1 flex items-start gap-2 text-xs text-[var(--color-fg-muted)]">
+      <label className="mt-1 flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed text-[var(--color-fg-muted)]">
         <input
           type="checkbox"
           checked={agree}
           onChange={(e) => setAgree(e.target.checked)}
-          className="mt-0.5 h-4 w-4 rounded border-[var(--color-border)]"
+          className="mt-0.5 h-4 w-4 cursor-pointer rounded-[3px] border border-[var(--color-border-strong)] accent-[var(--color-primary)] transition-colors"
         />
         <span>
           Li e aceito os{" "}
-          <Link href="/termos" className="underline-offset-4 hover:underline">
+          <Link
+            href="/termos"
+            className="link-underline text-[var(--color-fg)] hover:text-[var(--color-primary)]"
+          >
             termos de uso
           </Link>{" "}
           e a{" "}
-          <Link href="/privacidade" className="underline-offset-4 hover:underline">
+          <Link
+            href="/privacidade"
+            className="link-underline text-[var(--color-fg)] hover:text-[var(--color-primary)]"
+          >
             política de privacidade
           </Link>
           .
@@ -136,14 +142,20 @@ export function SignupForm() {
       </label>
 
       {error && (
-        <p className="rounded-[var(--radius)] border border-[var(--color-expense)]/30 bg-[var(--color-expense-soft)] px-3 py-2 text-xs text-[var(--color-expense)]">
-          {error}
+        <p
+          role="alert"
+          className="reveal flex items-start gap-2 rounded-[var(--radius)] border border-[var(--color-danger)]/30 bg-[var(--color-danger-soft)] px-3 py-2.5 text-xs leading-relaxed text-[var(--color-danger)]"
+        >
+          <span aria-hidden className="mt-0.5">⚠</span>
+          <span>{error}</span>
         </p>
       )}
 
-      <Button type="submit" disabled={loading} className="mt-2" size="lg">
+      <Button type="submit" disabled={loading} className="mt-3 shadow-pop" size="lg">
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        {loading ? "Criando sua conta..." : `Começar ${BRAND.pricing.trialDays} dias grátis`}
+        {loading
+          ? "Criando sua conta..."
+          : `Começar ${BRAND.pricing.trialDays} dias grátis`}
       </Button>
 
       <p className="text-center text-[10.5px] text-[var(--color-fg-subtle)]">

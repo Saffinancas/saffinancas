@@ -165,13 +165,24 @@ export function AdminShell({ user, children }: Props) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-2 rounded-[var(--radius)] px-3 py-2 text-sm transition-colors",
+                    "group relative flex items-center gap-2.5 rounded-[var(--radius)] px-3 py-2 text-sm transition-colors duration-200",
                     active
-                      ? "bg-[var(--color-primary-soft)] text-[var(--color-primary)] font-medium"
+                      ? "bg-[var(--color-primary-soft)]/70 font-medium text-[var(--color-primary)]"
                       : "text-[var(--color-fg-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-fg)]",
                   )}
                 >
-                  <item.icon className="h-4 w-4" />
+                  {active && (
+                    <span
+                      aria-hidden
+                      className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-[var(--color-primary)]"
+                    />
+                  )}
+                  <item.icon
+                    className={cn(
+                      "h-4 w-4 transition-transform duration-200",
+                      active ? "scale-110" : "group-hover:scale-105",
+                    )}
+                  />
                   {item.label}
                 </Link>
               );
