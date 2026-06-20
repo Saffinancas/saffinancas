@@ -1,21 +1,27 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Instrument_Serif } from "next/font/google";
+import { Hanken_Grotesk, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BRAND } from "@/lib/brand";
 import "./globals.css";
 
-const inter = Inter({
+const sans = Hanken_Grotesk({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-inter",
+  variable: "--font-sans-display",
 });
 
-const instrumentSerif = Instrument_Serif({
+const serif = Instrument_Serif({
   subsets: ["latin"],
   weight: ["400"],
   style: ["normal", "italic"],
   display: "swap",
   variable: "--font-instrument-serif",
+});
+
+const mono = JetBrains_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-mono",
 });
 
 export const metadata: Metadata = {
@@ -53,8 +59,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning className={`${inter.variable} ${instrumentSerif.variable}`}>
-      <body className="bg-bg text-fg antialiased min-h-dvh">
+    <html lang="pt-BR" suppressHydrationWarning className={`${sans.variable} ${serif.variable} ${mono.variable}`}>
+      <body className="bg-bg text-fg antialiased min-h-dvh font-sans">
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

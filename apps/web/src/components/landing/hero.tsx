@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { ArrowRight, Sparkles, MessageSquare, TrendingUp, Target, PiggyBank, CheckCheck } from "lucide-react";
+import {
+  ArrowRight,
+  Sparkles,
+  TrendingUp,
+  Target,
+  PiggyBank,
+  CheckCheck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BentoCard, Sparkline, ProgressRing, Donut, PulseDot } from "./bento";
 import { BRAND } from "@/lib/brand";
@@ -16,53 +23,67 @@ const CATEGORIA_SLICES = [
 
 export async function Hero() {
   const pricing = await getPricing();
-  const monthlyFmt = (pricing.monthlyCents / 100)
-    .toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const monthlyFmt = (pricing.monthlyCents / 100).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
   return (
     <section className="relative overflow-hidden">
-      {/* gradientes vivos no fundo */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-32 -z-10 h-[640px]"
-      >
-        <div className="absolute left-1/4 top-0 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-[var(--color-primary)]/14 blur-[120px]" />
-        <div className="absolute right-1/4 top-20 h-[380px] w-[380px] translate-x-1/2 rounded-full bg-[var(--color-income)]/10 blur-[100px]" />
-      </div>
-      {/* grid texture */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.025] [background-image:linear-gradient(var(--color-fg)_1px,transparent_1px),linear-gradient(90deg,var(--color-fg)_1px,transparent_1px)] [background-size:32px_32px]"
-      />
+      {/* atmosfera — aurora difusa + grid fantasma + grão.
+          Tudo posicionado, blur via filter (GPU), animações em transform. */}
+      <div aria-hidden className="aurora -z-10" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-grid" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-grain" />
 
-      <div className="mx-auto max-w-6xl px-4 pt-14 pb-20 sm:px-6 sm:pt-20 sm:pb-28">
+      <div className="mx-auto max-w-6xl px-4 pt-16 pb-20 sm:px-6 sm:pt-24 sm:pb-28">
         <div className="grid items-start gap-10 lg:grid-cols-[1.05fr_1.25fr] lg:gap-14">
-          {/* COLUNA ESQUERDA — pitch */}
-          <div className="lg:pt-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)]/20 bg-[var(--color-primary-soft)]/60 px-3 py-1 text-xs text-[var(--color-primary)] shadow-soft backdrop-blur-sm">
+          {/* COLUNA ESQUERDA — pitch editorial */}
+          <div className="lg:pt-4">
+            <div
+              className="reveal inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)]/25 bg-[var(--color-primary-soft)]/70 px-3 py-1 text-xs text-[var(--color-primary)] shadow-soft backdrop-blur-sm"
+              style={{ ["--d" as string]: "0ms" }}
+            >
               <Sparkles className="h-3.5 w-3.5" />
-              IA + WhatsApp pra finanças familiares
+              IA + WhatsApp para finanças familiares
             </div>
 
-            <h1 className="mt-5 text-balance text-[2.5rem] leading-[1.04] tracking-tight sm:text-[3.1rem] lg:text-[3.6rem]">
-              Cada um manda{" "}
-              <span className="text-[var(--color-primary)]">no WhatsApp</span>.{" "}
-              A plataforma{" "}
-              <span className="display-serif italic">centraliza</span>{" "}
-              tudo da família.
+            <h1
+              className="reveal mt-6 text-balance text-[2.65rem] font-medium leading-[1.02] tracking-[-0.02em] sm:text-[3.25rem] lg:text-[3.85rem]"
+              style={{ ["--d" as string]: "80ms" }}
+            >
+              Cada um manda
+              <br />
+              <span className="text-[var(--color-primary)]">no WhatsApp</span>.
+              <br />A plataforma{" "}
+              <span className="display-serif italic font-normal text-[1.08em]">
+                centraliza
+              </span>{" "}
+              tudo
+              <br />
+              da família.
             </h1>
 
-            <p className="mt-5 max-w-xl text-pretty text-[15.5px] leading-relaxed text-[var(--color-fg-muted)] sm:text-base">
+            <p
+              className="reveal mt-6 max-w-xl text-pretty text-[15.5px] leading-relaxed text-[var(--color-fg-muted)] sm:text-base"
+              style={{ ["--d" as string]: "180ms" }}
+            >
               Marido, esposa, mãe, filhos — cada um vincula o WhatsApp dele(a) e
               manda os gastos como já manda. A IA classifica, o dashboard junta
-              tudo num só lugar. <strong className="text-[var(--color-fg)]">Sem grupo,
-              sem planilha, sem app pra aprender.</strong>
+              tudo num só lugar.{" "}
+              <strong className="font-medium text-[var(--color-fg)]">
+                Sem grupo, sem planilha, sem app pra aprender.
+              </strong>
             </p>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <div
+              className="reveal mt-8 flex flex-col gap-3 sm:flex-row"
+              style={{ ["--d" as string]: "260ms" }}
+            >
               <Button asChild size="lg" className="group shadow-pop">
                 <Link href="/assinar">
                   Começar agora — R$ {monthlyFmt}/mês
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
                 </Link>
               </Button>
               <Button asChild variant="secondary" size="lg">
@@ -70,7 +91,10 @@ export async function Hero() {
               </Button>
             </div>
 
-            <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[var(--color-fg-subtle)]">
+            <ul
+              className="reveal mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[var(--color-fg-subtle)]"
+              style={{ ["--d" as string]: "340ms" }}
+            >
               <li className="flex items-center gap-1.5">
                 <Dot /> {BRAND.pricing.trialDays} dias de garantia
               </li>
@@ -82,7 +106,10 @@ export async function Hero() {
               </li>
             </ul>
 
-            <div className="mt-10 hidden grid-cols-3 gap-6 border-t border-[var(--color-border)] pt-6 sm:grid">
+            <div
+              className="reveal mt-10 hidden grid-cols-3 gap-6 border-t border-[var(--color-border)] pt-6 sm:grid"
+              style={{ ["--d" as string]: "420ms" }}
+            >
               <Stat value="96%" label="precisão IA" />
               <Stat value="< 2s" label="por mensagem" />
               <Stat value="0" label="planilha pra preencher" />
@@ -90,7 +117,10 @@ export async function Hero() {
           </div>
 
           {/* COLUNA DIREITA — bento dataviz */}
-          <div className="relative">
+          <div
+            className="reveal relative"
+            style={{ ["--d" as string]: "260ms" }}
+          >
             <div className="grid auto-rows-[minmax(0,_1fr)] grid-cols-2 gap-3 sm:gap-4">
               {/* Saldo (hero card) — span 2 colunas */}
               <BentoCard
@@ -98,22 +128,28 @@ export async function Hero() {
                 tone="primary"
                 eyebrow="Saldo da família"
                 metric={
-                  <span>
+                  <span className="ticker">
                     R${" "}
                     <span className="text-[var(--color-primary)]">12.480</span>
-                    ,90
+                    <span className="text-[0.5em] align-baseline">,90</span>
                   </span>
                 }
                 footnote={
                   <span className="inline-flex items-center gap-1">
                     <TrendingUp className="h-3 w-3 text-[var(--color-income)]" />
-                    <span className="text-[var(--color-income)] font-medium">+4,2%</span>
+                    <span className="text-[var(--color-income)] font-medium">
+                      +4,2%
+                    </span>
                     <span>vs. mês passado</span>
                   </span>
                 }
               >
                 <div className="-mx-1 mt-2">
-                  <Sparkline values={SALDO_SERIES} height={70} stroke="var(--color-primary)" />
+                  <Sparkline
+                    values={SALDO_SERIES}
+                    height={70}
+                    stroke="var(--color-primary)"
+                  />
                 </div>
               </BentoCard>
 
@@ -124,9 +160,16 @@ export async function Hero() {
                 title="R$ 3.500 / 5.000"
               >
                 <div className="flex items-center gap-3">
-                  <ProgressRing value={70} label="da meta" color="var(--color-income)" size={78} />
+                  <ProgressRing
+                    value={70}
+                    label="da meta"
+                    color="var(--color-income)"
+                    size={78}
+                  />
                   <div className="text-[11px] leading-tight text-[var(--color-fg-muted)]">
-                    <p className="font-medium text-[var(--color-fg)]">No ritmo</p>
+                    <p className="font-medium text-[var(--color-fg)]">
+                      No ritmo
+                    </p>
                     <p>conclui em ~2 meses</p>
                   </div>
                 </div>
@@ -137,13 +180,13 @@ export async function Hero() {
                 <Donut slices={CATEGORIA_SLICES} size={84} />
               </BentoCard>
 
-              {/* WhatsApp live capture — span 2. 3 DMs individuais de membros
-                  diferentes da mesma família, cada uma virou transação. */}
+              {/* WhatsApp live capture */}
               <BentoCard
                 span="col-span-2"
                 eyebrow={
                   <span className="inline-flex items-center gap-1.5">
-                    <PulseDot color="var(--color-income)" /> AO VIVO · 3 membros da família
+                    <PulseDot color="var(--color-income)" /> AO VIVO · 3 membros
+                    da família
                   </span>
                 }
                 title={null}
@@ -161,7 +204,7 @@ export async function Hero() {
                   <MsgRow
                     name="Pedro"
                     hue={25}
-                    text="caiu Pix do freela, 1.850 ✨"
+                    text="caiu Pix do freela, 1.850"
                     time="14:05"
                     tagTone="income"
                     tagAmount="R$ 1.850,00"
@@ -186,7 +229,9 @@ export async function Hero() {
                     <p className="num text-xl font-semibold tracking-tight">
                       R$ 84.210
                     </p>
-                    <p className="text-[10px] text-[var(--color-fg-muted)]">B3 + cripto + RF</p>
+                    <p className="text-[10px] text-[var(--color-fg-muted)]">
+                      B3 + cripto + RF
+                    </p>
                   </div>
                   <PiggyBank className="h-7 w-7 text-[var(--color-warning)]" />
                 </div>
@@ -205,7 +250,9 @@ export async function Hero() {
                     <p className="num text-xl font-semibold tracking-tight">
                       R$ 2.140
                     </p>
-                    <p className="text-[10px] text-[var(--color-fg-muted)]">restituição prevista</p>
+                    <p className="text-[10px] text-[var(--color-fg-muted)]">
+                      restituição prevista
+                    </p>
                   </div>
                   <Target className="h-7 w-7 text-[var(--color-fg-muted)]" />
                 </div>
@@ -224,7 +271,7 @@ function Stat({ value, label }: { value: string; label: string }) {
       <p className="num text-2xl font-semibold tracking-tight text-[var(--color-fg)]">
         {value}
       </p>
-      <p className="text-[11px] uppercase tracking-wider text-[var(--color-fg-subtle)]">
+      <p className="mt-0.5 text-[10.5px] uppercase tracking-[0.14em] text-[var(--color-fg-subtle)]">
         {label}
       </p>
     </div>
@@ -258,7 +305,7 @@ function MsgRow({
   tagCategory: string;
 }) {
   return (
-    <li className="flex items-center gap-2 rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] p-2 pr-3 shadow-soft">
+    <li className="card-hover flex items-center gap-2 rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] p-2 pr-3 shadow-soft">
       <div
         aria-hidden
         className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[10px] font-semibold"
@@ -271,7 +318,10 @@ function MsgRow({
       </div>
       <div className="min-w-0 flex-1">
         <p className="flex items-center gap-1 text-[11px]">
-          <span className="font-semibold" style={{ color: `oklch(45% 0.12 ${hue})` }}>
+          <span
+            className="font-semibold"
+            style={{ color: `oklch(45% 0.12 ${hue})` }}
+          >
             {name}
           </span>
           <span className="text-[var(--color-fg-subtle)]">·</span>
@@ -292,12 +342,9 @@ function MsgRow({
           {tagTone === "income" ? "+" : "−"}
           {tagAmount}
         </p>
-        <p className="text-[9px] uppercase tracking-wider text-[var(--color-fg-subtle)]">
+        <p className="text-[9px] uppercase tracking-[0.12em] text-[var(--color-fg-subtle)]">
           IA · {tagCategory}
         </p>
-      </div>
-      <div className="absolute inline-flex">
-        <MessageSquare className="hidden h-3 w-3 text-[var(--color-fg-subtle)]" />
       </div>
     </li>
   );
