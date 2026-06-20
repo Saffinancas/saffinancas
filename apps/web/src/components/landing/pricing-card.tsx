@@ -41,12 +41,11 @@ export function PricingCard({
 
   return (
     <>
-      <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-primary)]">
-          Preço
-        </p>
-        <h2 className="mt-3 text-balance text-3xl tracking-tight sm:text-4xl lg:text-[2.6rem] lg:leading-[1.1]">
-          Um plano. <span className="display-serif italic">Família inteira.</span>
+      <div className="scroll-fade mx-auto max-w-3xl px-4 text-center sm:px-6">
+        <p className="eyebrow mx-auto">Preço</p>
+        <h2 className="section-h2 mx-auto">
+          Um plano.{" "}
+          <span className="display-serif italic font-normal">Família inteira.</span>
         </h2>
         <p className="mt-4 text-[15px] text-[var(--color-fg-muted)]">
           Sem pegadinha de &ldquo;premium&rdquo;. Sem cobrar por membro do grupo.{" "}

@@ -105,19 +105,15 @@ export function ModulesSection() {
       id="plataforma"
       className="relative border-t border-[var(--color-border)] py-20 sm:py-28"
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.02] [background-image:linear-gradient(var(--color-fg)_1px,transparent_1px),linear-gradient(90deg,var(--color-fg)_1px,transparent_1px)] [background-size:40px_40px]"
-      />
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-grid" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-grain" />
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="max-w-2xl">
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-primary)]">
-            Plataforma completa
-          </p>
-          <h2 className="mt-3 text-balance text-3xl tracking-tight sm:text-4xl lg:text-[2.6rem] lg:leading-[1.1]">
+        <div className="scroll-fade max-w-2xl">
+          <p className="eyebrow">Plataforma completa</p>
+          <h2 className="section-h2">
             Tudo o que você precisa pra cuidar do dinheiro da família —{" "}
-            <span className="display-serif italic">num lugar só.</span>
+            <span className="display-serif italic font-normal">num lugar só.</span>
           </h2>
           <p className="mt-4 text-pretty text-[15px] leading-relaxed text-[var(--color-fg-muted)]">
             Começou como captura por WhatsApp. Cresceu pra controlar carteira de

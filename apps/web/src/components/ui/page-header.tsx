@@ -51,21 +51,19 @@ export function PageHeader({
       )}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          {eyebrow && (
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-primary)]">
-              {eyebrow}
-            </p>
-          )}
-          <h1 className="mt-2 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+          {eyebrow && <p className="eyebrow">{eyebrow}</p>}
+          <h1 className="mt-2.5 text-balance text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
             {title}
           </h1>
           {description && (
-            <p className="mt-2 max-w-2xl text-pretty text-sm leading-relaxed text-[var(--color-fg-muted)]">
+            <p className="mt-2.5 max-w-2xl text-pretty text-sm leading-relaxed text-[var(--color-fg-muted)]">
               {description}
             </p>
           )}
         </div>
-        {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+        {actions && (
+          <div className="flex shrink-0 items-center gap-2">{actions}</div>
+        )}
       </div>
     </header>
   );
@@ -112,7 +110,7 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "group relative isolate overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-gradient-to-br p-5 ring-1 ring-transparent shadow-soft transition-all duration-300 hover:-translate-y-0.5 hover:shadow-pop",
+        "card-hover group relative isolate overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-gradient-to-br p-5 ring-1 ring-transparent shadow-soft",
         STAT_TONE[tone],
         className,
       )}

@@ -46,13 +46,11 @@ export function Comparison() {
   return (
     <section className="border-t border-[var(--color-border)] bg-[var(--color-bg-muted)] py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="max-w-2xl">
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-primary)]">
-            Comparativo honesto
-          </p>
-          <h2 className="mt-3 text-balance text-3xl tracking-tight sm:text-4xl lg:text-[2.6rem] lg:leading-[1.1]">
+        <div className="scroll-fade max-w-2xl">
+          <p className="eyebrow">Comparativo honesto</p>
+          <h2 className="section-h2">
             O que muda em relação às{" "}
-            <span className="display-serif italic">alternativas</span>
+            <span className="display-serif italic font-normal">alternativas</span>
           </h2>
           <p className="mt-4 text-pretty text-[14.5px] leading-relaxed text-[var(--color-fg-muted)]">
             Lista completa do que cada produto faz. &ldquo;Apps tradicionais&rdquo; = Mobills,
@@ -61,9 +59,9 @@ export function Comparison() {
           </p>
         </div>
 
-        <div className="mt-12 overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-soft">
+        <div className="scroll-fade mt-12 overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-soft">
           <table className="w-full min-w-[640px] text-left text-sm">
-            <thead>
+            <thead className="sticky top-16 z-10 bg-[var(--color-surface)]/95 backdrop-blur">
               <tr className="border-b border-[var(--color-border)] text-[var(--color-fg-subtle)]">
                 <th className="px-5 py-4 text-[11px] font-semibold uppercase tracking-[0.14em]">Recurso</th>
                 <th className="relative px-3 py-4 text-center text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-primary)]">

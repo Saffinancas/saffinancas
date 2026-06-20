@@ -20,36 +20,36 @@ export default async function SignInPage() {
 
   return (
     <main className="relative isolate grid min-h-dvh place-items-center overflow-hidden bg-[var(--color-bg-muted)] px-4 py-12">
-      {/* glow ambiente — mesma linguagem do PageHeader/landing */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-40 -z-10 h-[480px]"
-      >
-        <div className="absolute left-1/2 top-0 h-[360px] w-[360px] -translate-x-1/2 rounded-full bg-[var(--color-primary)]/14 blur-[110px]" />
-        <div className="absolute right-1/3 top-24 h-[280px] w-[280px] rounded-full bg-[var(--color-income)]/10 blur-[90px]" />
-      </div>
+      <div aria-hidden className="aurora -z-10" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-grain" />
 
-      <div className="w-full max-w-sm">
-        <Link href="/" aria-label="Voltar para a home" className="inline-flex">
+      <div className="reveal w-full max-w-sm" style={{ ["--d" as string]: "0ms" }}>
+        <Link
+          href="/"
+          aria-label="Voltar para a home"
+          className="inline-flex transition-transform duration-200 hover:scale-[1.02]"
+        >
           <BrandMark />
         </Link>
 
-        <div className="mt-8 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-7 shadow-soft ring-1 ring-transparent transition-all duration-300 hover:shadow-pop">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-primary)]">
-            Acesso · Cliente
-          </p>
-          <h1 className="mt-2 text-balance text-2xl font-semibold tracking-tight">
-            Bem-vindo de <span className="display-serif italic">volta</span>
+        <div className="card-hover mt-8 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/95 p-7 shadow-soft ring-1 ring-transparent backdrop-blur-sm">
+          <p className="eyebrow">Acesso · Cliente</p>
+          <h1 className="mt-3 text-balance text-[1.75rem] font-medium leading-tight tracking-[-0.02em]">
+            Bem-vindo de{" "}
+            <span className="display-serif italic font-normal">volta</span>
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-[var(--color-fg-muted)]">
+          <p className="mt-2.5 text-sm leading-relaxed text-[var(--color-fg-muted)]">
             Acesso pra você ver o que rolou na sua família.
           </p>
           <LoginForm />
         </div>
 
-        <p className="mt-4 text-center text-xs text-[var(--color-fg-subtle)]">
+        <p className="mt-5 text-center text-xs text-[var(--color-fg-subtle)]">
           Não tem conta?{" "}
-          <Link href="/assinar" className="underline-offset-4 hover:underline">
+          <Link
+            href="/assinar"
+            className="link-underline text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]"
+          >
             Começar {BRAND.pricing.trialDays} dias grátis
           </Link>
         </p>

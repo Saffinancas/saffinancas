@@ -31,13 +31,12 @@ export function HowItWorks() {
       className="relative border-t border-[var(--color-border)] bg-[var(--color-bg-muted)] py-20 sm:py-28"
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="max-w-2xl">
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-primary)]">
-            Como funciona
-          </p>
-          <h2 className="mt-3 text-balance text-3xl tracking-tight sm:text-4xl lg:text-[2.6rem] lg:leading-[1.1]">
+        <div className="scroll-fade max-w-2xl">
+          <p className="eyebrow">Como funciona</p>
+          <h2 className="section-h2">
             Três passos.{" "}
-            <span className="display-serif italic">Nenhum esforço</span> depois disso.
+            <span className="display-serif italic font-normal">Nenhum esforço</span>{" "}
+            depois disso.
           </h2>
         </div>
 

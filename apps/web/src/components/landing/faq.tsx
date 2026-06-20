@@ -58,18 +58,20 @@ const items = [
 function FaqItem({ q, a, defaultOpen = false }: { q: string; a: string; defaultOpen?: boolean }) {
   const [open, setOpen] = React.useState(defaultOpen);
   return (
-    <div className="border-b border-[var(--color-border)] last:border-b-0">
+    <div className="group border-b border-[var(--color-border)] last:border-b-0">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-4 py-5 text-left"
+        className="flex w-full items-center justify-between gap-4 rounded-[var(--radius-sm)] py-5 text-left transition-colors duration-200 hover:text-[var(--color-primary)]"
       >
-        <span className="text-[15.5px] font-medium text-[var(--color-fg)]">{q}</span>
+        <span className="text-[15.5px] font-medium text-[var(--color-fg)] group-hover:text-[var(--color-primary)]">
+          {q}
+        </span>
         <ChevronDown
           className={
-            "h-5 w-5 shrink-0 text-[var(--color-fg-muted)] transition-transform " +
-            (open ? "rotate-180" : "")
+            "h-5 w-5 shrink-0 text-[var(--color-fg-muted)] transition-transform duration-300 " +
+            (open ? "rotate-180 text-[var(--color-primary)]" : "")
           }
           aria-hidden
         />
@@ -94,17 +96,15 @@ export function FAQ() {
   return (
     <section id="faq" className="border-t border-[var(--color-border)] py-20 sm:py-28">
       <div className="mx-auto max-w-3xl px-4 sm:px-6">
-        <div className="text-center">
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-primary)]">
-            Perguntas frequentes
-          </p>
-          <h2 className="mt-3 text-balance text-3xl tracking-tight sm:text-4xl lg:text-[2.4rem] lg:leading-[1.1]">
+        <div className="scroll-fade text-center">
+          <p className="eyebrow mx-auto">Perguntas frequentes</p>
+          <h2 className="section-h2 mx-auto">
             O que toda família pergunta{" "}
-            <span className="display-serif italic">antes de assinar</span>
+            <span className="display-serif italic font-normal">antes de assinar</span>
           </h2>
         </div>
 
-        <div className="mt-12 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] px-6 shadow-soft">
+        <div className="scroll-fade mt-12 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] px-6 shadow-soft">
           {items.map((it, i) => (
             <FaqItem key={it.q} q={it.q} a={it.a} defaultOpen={i === 0} />
           ))}

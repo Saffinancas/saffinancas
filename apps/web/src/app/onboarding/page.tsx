@@ -20,22 +20,19 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <main className="grid min-h-dvh place-items-center bg-[var(--color-bg-muted)] px-4 py-12">
-      <div className="w-full max-w-lg">
+    <main className="relative isolate grid min-h-dvh place-items-center overflow-hidden bg-[var(--color-bg-muted)] px-4 py-12">
+      <div aria-hidden className="aurora -z-10" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-grain" />
+
+      <div className="reveal w-full max-w-lg" style={{ ["--d" as string]: "0ms" }}>
         <div className="inline-flex">
           <BrandMark />
         </div>
-        <div className="relative isolate mt-8 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-soft transition-all duration-300 hover:shadow-pop">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -right-12 -top-12 -z-10 h-40 w-40 rounded-full bg-[var(--color-primary)]/12 blur-[80px]"
-          />
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-primary)]">
-            Boas-vindas · Onboarding
-          </p>
-          <h1 className="mt-2 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+        <div className="card-hover relative isolate mt-8 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/95 p-8 shadow-soft backdrop-blur-sm">
+          <p className="eyebrow">Boas-vindas · Onboarding</p>
+          <h1 className="mt-3 text-balance text-3xl font-medium tracking-[-0.02em] sm:text-[2.6rem] sm:leading-[1.05]">
             Bem-vinda,{" "}
-            <span className="display-serif italic">
+            <span className="display-serif italic font-normal">
               {session.user.name?.split(" ")[0] ?? "família"}
             </span>
             .
