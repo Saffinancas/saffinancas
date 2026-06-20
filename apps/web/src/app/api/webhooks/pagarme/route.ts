@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { db, schema } from "@cofre/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { id as genId } from "@/lib/ids";
+import { getPlatformSetting } from "@/lib/platform-settings";
 
 /**
  * Webhook Pagar.me v5 — idempotente via tabela webhook_events.
@@ -26,11 +28,33 @@ type PagarmeEvent = {
   };
 };
 
+async function verifyPagarmeSignature(raw: string, signatureHeader: string | null): Promise<boolean> {
+  const secret = await getPlatformSetting("pagarme.webhook_secret");
+  if (!secret) {
+    // Sem secret: em prod rejeita; em dev aceita com warn.
+    if (process.env.NODE_ENV === "production") return false;
+    console.warn("[pagarme webhook] PAGARME_WEBHOOK_SECRET ausente — aceito em dev");
+    return true;
+  }
+  if (!signatureHeader) return false;
+  const expected = createHmac("sha256", secret).update(raw).digest("hex");
+  const provided = signatureHeader.replace(/^sha256=/i, "").trim();
+  if (provided.length !== expected.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(provided, "hex"), Buffer.from(expected, "hex"));
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(req: Request) {
   const raw = await req.text();
+  const signature =
+    req.headers.get("x-hub-signature") ?? req.headers.get("pagarme-signature");
 
-  // TODO: validar HMAC signature em req.headers.get('x-hub-signature')
-  // quando PAGARME_WEBHOOK_SECRET estiver presente.
+  if (!(await verifyPagarmeSignature(raw, signature))) {
+    return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
+  }
 
   let event: PagarmeEvent;
   try {
@@ -92,12 +116,22 @@ export async function POST(req: Request) {
     await db
       .update(schema.webhookEvents)
       .set({ processedAt: new Date() })
-      .where(eq(schema.webhookEvents.externalEventId, externalId));
+      .where(
+        and(
+          eq(schema.webhookEvents.provider, "pagarme"),
+          eq(schema.webhookEvents.externalEventId, externalId),
+        ),
+      );
   } catch (err) {
     await db
       .update(schema.webhookEvents)
       .set({ error: err instanceof Error ? err.message : String(err) })
-      .where(eq(schema.webhookEvents.externalEventId, externalId));
+      .where(
+        and(
+          eq(schema.webhookEvents.provider, "pagarme"),
+          eq(schema.webhookEvents.externalEventId, externalId),
+        ),
+      );
   }
 
   return NextResponse.json({ ok: true });

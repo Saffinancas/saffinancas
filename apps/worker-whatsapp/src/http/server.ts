@@ -2,7 +2,6 @@ import express, { type Express, type Request, type Response, type NextFunction }
 import { requireSharedSecret } from "./auth.js";
 import { sessionsRouter } from "./sessions.js";
 import { safSessionRouter } from "./saf-session.js";
-import { sessionManager } from "../wa/manager.js";
 import { log } from "../log.js";
 
 export function buildApp(): Express {
@@ -10,12 +9,11 @@ export function buildApp(): Express {
   app.disable("x-powered-by");
   app.use(express.json({ limit: "256kb" }));
 
+  // Liveness probe minimalista — apenas confirma que o processo está rodando.
+  // Detalhes operacionais (activeSessions, uptime) ficam atrás do bearer em
+  // /sessions e /saf-session/* pra não vazarem pra qualquer scanner.
   app.get("/health", (_req, res) => {
-    res.json({
-      ok: true,
-      activeSessions: sessionManager.list().length,
-      uptime: process.uptime(),
-    });
+    res.json({ ok: true });
   });
 
   app.use("/sessions", requireSharedSecret, sessionsRouter);

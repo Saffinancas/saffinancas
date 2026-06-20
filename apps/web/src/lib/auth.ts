@@ -35,9 +35,20 @@ export const auth = betterAuth({
   appName: BRAND.name,
   baseURL: publicUrl,
   trustedOrigins,
-  secret:
-    process.env.BETTER_AUTH_SECRET ??
-    "dev-only-not-for-prod-please-set-BETTER_AUTH_SECRET-in-env",
+  secret: (() => {
+    const s = process.env.BETTER_AUTH_SECRET;
+    if (!s) {
+      if (process.env.NODE_ENV === "production") {
+        throw new Error(
+          "BETTER_AUTH_SECRET ausente em produção. Configure na Vercel — sem secret, " +
+            "tokens de sessão são forjáveis.",
+        );
+      }
+      // Em dev, retorna um valor estável SÓ pra desenvolvimento — nunca usar em prod.
+      return "dev-only-not-for-prod-please-set-BETTER_AUTH_SECRET-in-env";
+    }
+    return s;
+  })(),
 
   database: drizzleAdapter(db, {
     provider: "pg",

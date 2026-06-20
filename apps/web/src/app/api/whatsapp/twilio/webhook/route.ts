@@ -47,13 +47,10 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: "provider_not_active" }, { status: 400 });
   }
 
-  // Validação HMAC — em produção, sempre exigir. Em sandbox de teste, log + segue.
+  // Validação HMAC obrigatória pra sandbox e produção. Twilio assina os dois.
   const valid = await isValidTwilioSignature(req, rawBody);
-  if (!valid && providerId === "twilio_production") {
-    return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
-  }
   if (!valid) {
-    console.warn("[twilio webhook] assinatura inválida — aceita por estar em sandbox");
+    return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
   }
 
   const params = new URLSearchParams(rawBody);

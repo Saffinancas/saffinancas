@@ -95,9 +95,10 @@ export async function listPlatformSettings(
       if (hasValue) {
         try {
           const plain = r.encrypted ? decrypt(r.value!) : r.value!;
-          masked = r.encrypted
-            ? "····" + plain.slice(-4)
-            : plain;
+          // Mascara TODOS os valores — quem precisa do plain pra editar deve
+          // buscar via endpoint dedicado com auth admin. Listagem nunca expõe
+          // valores completos, mesmo de campos não-encrypted.
+          masked = plain.length <= 4 ? "····" : "····" + plain.slice(-4);
         } catch {
           masked = "····";
         }

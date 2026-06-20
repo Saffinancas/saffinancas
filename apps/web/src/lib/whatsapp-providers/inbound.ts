@@ -295,13 +295,7 @@ async function ingestForFamily(
     .set({ processedAt: new Date() })
     .where(eq(schema.whatsappMessages.id, rawId));
 
-  // Resposta opcional pro chat
-  console.log("[whatsapp.inbound] tentando confirmação", {
-    canSend: provider.capabilities.canSendMessages,
-    providerId: provider.id,
-    to: msg.externalChatId,
-    type: draft.type,
-  });
+  // Confirmação no chat: "✓ Lancei -R$ X,XX (descrição)".
   if (provider.capabilities.canSendMessages) {
     const sign = draft.type === "expense" ? "−" : "+";
     const valor = (draft.amount_cents / 100).toLocaleString("pt-BR", {
@@ -309,9 +303,7 @@ async function ingestForFamily(
       maximumFractionDigits: 2,
     });
     const body = `✓ Lancei ${sign}R$ ${valor} (${draft.description ?? "sem descrição"}).`;
-    console.log("[whatsapp.inbound] chamando safeReply", { to: msg.externalChatId, body });
     await safeReply(provider, msg.externalChatId, body);
-    console.log("[whatsapp.inbound] safeReply terminou");
   }
 }
 
@@ -339,16 +331,9 @@ async function upsertMember(familyId: string, msg: IncomingMessage): Promise<str
 }
 
 async function safeReply(provider: WhatsappProvider, to: string, body: string): Promise<void> {
-  if (!provider.capabilities.canSendMessages) {
-    console.warn("[whatsapp.inbound] safeReply: canSendMessages=false, skip", {
-      providerId: provider.id,
-    });
-    return;
-  }
-  console.log("[whatsapp.inbound] safeReply: enviando", { providerId: provider.id, to });
+  if (!provider.capabilities.canSendMessages) return;
   try {
     await provider.sendMessage({ to, body });
-    console.log("[whatsapp.inbound] safeReply: sucesso");
   } catch (err) {
     console.error("[whatsapp.inbound] reply failed", err);
   }
