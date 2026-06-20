@@ -1,8 +1,11 @@
 import { BRAND } from "@/lib/brand";
+import { getPricing } from "@/lib/pricing";
 
 export const metadata = { title: "Termos de Uso" };
 
-export default function TermosPage() {
+export default async function TermosPage() {
+  const pricing = await getPricing();
+  const monthlyFmt = (pricing.monthlyCents / 100).toFixed(2).replace(".", ",");
   return (
     <>
       <h1>Termos de Uso</h1>
@@ -35,7 +38,7 @@ export default function TermosPage() {
         <li>Trial gratuito de {BRAND.pricing.trialDays} dias, sem necessidade de cartão.</li>
         <li>
           Após o trial: cobrança mensal de R${" "}
-          {BRAND.pricing.monthlyBRL.toFixed(2).replace(".", ",")} ou anual com desconto.
+          {monthlyFmt} ou anual com desconto.
         </li>
         <li>Cancelamento a qualquer momento em /app/cobranca; valida até o fim do ciclo pago.</li>
       </ul>

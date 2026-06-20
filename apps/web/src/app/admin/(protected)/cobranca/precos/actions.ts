@@ -54,8 +54,10 @@ export async function updatePricingAction(input: UpdatePricingInput): Promise<Ac
     revalidatePath("/admin/cobranca");
     revalidatePath("/");
     revalidatePath("/assinar");
+    revalidatePath("/termos");
     revalidatePath("/app/cobranca");
     revalidatePath("/admin");
+    revalidatePath("/admin/uso-ia");
 
     return { ok: true };
   } catch (err) {

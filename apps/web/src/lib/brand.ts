@@ -22,8 +22,9 @@ export const BRAND = {
     twitter: "@saffinancas",
   },
   pricing: {
-    monthlyBRL: 29.9,
-    annualBRL: 287, // ~ 2 meses de desconto
+    // Fallback apenas — fonte de verdade é o admin (platform_settings via getPricing()).
+    monthlyBRL: 39.9,
+    annualBRL: 430.92, // 39,90 × 12 × 0,9 (10% de desconto anual)
     trialDays: 7,
     /** Dias após o fim do trial em que mostramos banner persistente (past_due). */
     pastDueBannerDay: 1,

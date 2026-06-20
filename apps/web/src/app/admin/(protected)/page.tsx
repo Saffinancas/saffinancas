@@ -4,6 +4,7 @@ import { db, schema } from "@cofre/db";
 import { count, eq } from "drizzle-orm";
 import { Users, CheckCircle2, AlertTriangle, Wallet } from "lucide-react";
 import { PageHeader, StatCard, Section } from "@/components/ui/page-header";
+import { getPricing } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,9 @@ async function loadStats() {
 
 export default async function AdminDashboard() {
   const stats = await loadStats();
-  const mrr = stats.active * 29.9;
+  const pricing = await getPricing();
+  const monthlyBRL = pricing.monthlyCents / 100;
+  const mrr = stats.active * monthlyBRL;
 
   return (
     <div className="space-y-8">
@@ -84,7 +87,7 @@ export default async function AdminDashboard() {
             </span>
           }
           icon={<Wallet className="h-4 w-4" />}
-          trend="ativas × R$ 29,90"
+          trend={`ativas × R$ ${monthlyBRL.toFixed(2).replace(".", ",")}`}
         />
       </div>
 

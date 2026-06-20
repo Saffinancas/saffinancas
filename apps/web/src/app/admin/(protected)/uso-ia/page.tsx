@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { AI_PRICES, avgCostPerCallCents, pricingTable, USD_TO_BRL } from "@/lib/ai-pricing";
 import { formatBRL } from "@/lib/utils";
-import { BRAND } from "@/lib/brand";
+import { getPricing } from "@/lib/pricing";
 import { GenerateDemoData } from "./demo-button";
 import { Sparkles, TrendingDown, KeyRound, Wallet } from "lucide-react";
 import { PageHeader, StatCard, Section } from "@/components/ui/page-header";
@@ -90,7 +90,8 @@ export default async function UsoIaPage() {
   const totalActiveFamilies = byFamily.length;
   const byokFamilies = byFamily.filter((f) => Boolean(f.byokActive)).length;
 
-  const subscriptionRevenueCents = Math.round(BRAND.pricing.monthlyBRL * 100);
+  const pricing = await getPricing();
+  const subscriptionRevenueCents = pricing.monthlyCents;
 
   return (
     <div className="space-y-8">
@@ -136,7 +137,7 @@ export default async function UsoIaPage() {
               <span className="text-sm font-normal text-[var(--color-fg-muted)] align-top mr-1">
                 R$
               </span>
-              {BRAND.pricing.monthlyBRL.toFixed(2).replace(".", ",")}
+              {(subscriptionRevenueCents / 100).toFixed(2).replace(".", ",")}
             </span>
           }
           icon={<Wallet className="h-4 w-4 text-[var(--color-income)]" />}
