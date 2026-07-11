@@ -123,7 +123,7 @@ export function ModulesSection() {
           </p>
         </div>
 
-        <div className="mt-12 grid auto-rows-[200px] grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-12 grid grid-cols-1 gap-3 sm:auto-rows-[200px] sm:grid-cols-2 lg:grid-cols-4">
           {modules.map((m) => (
             <article
               key={m.title}

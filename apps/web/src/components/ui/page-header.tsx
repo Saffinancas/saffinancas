@@ -49,20 +49,22 @@ export function PageHeader({
           )}
         />
       )}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0">
+      <div className="flex flex-wrap items-end justify-between gap-3 sm:gap-4">
+        <div className="min-w-0 flex-1">
           {eyebrow && <p className="eyebrow">{eyebrow}</p>}
-          <h1 className="mt-2.5 text-balance text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
+          <h1 className="mt-2.5 text-balance text-[1.65rem] font-semibold leading-[1.1] tracking-[-0.02em] sm:text-4xl sm:leading-[1.05]">
             {title}
           </h1>
           {description && (
-            <p className="mt-2.5 max-w-2xl text-pretty text-sm leading-relaxed text-[var(--color-fg-muted)]">
+            <p className="mt-2.5 max-w-2xl text-pretty text-[13.5px] leading-relaxed text-[var(--color-fg-muted)] sm:text-sm">
               {description}
             </p>
           )}
         </div>
         {actions && (
-          <div className="flex shrink-0 items-center gap-2">{actions}</div>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {actions}
+          </div>
         )}
       </div>
     </header>
@@ -121,7 +123,7 @@ export function StatCard({
         </p>
         {icon && <span className="shrink-0 text-[var(--color-fg-muted)]">{icon}</span>}
       </div>
-      <p className="num mt-2 text-2xl font-semibold leading-tight tracking-tight sm:text-3xl">
+      <p className="num mt-2 break-words text-[1.35rem] font-semibold leading-tight tracking-tight sm:text-3xl">
         {value}
       </p>
       {trend && (

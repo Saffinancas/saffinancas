@@ -36,12 +36,12 @@ export async function Hero() {
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-grid" />
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-grain" />
 
-      <div className="mx-auto max-w-6xl px-4 pt-16 pb-20 sm:px-6 sm:pt-24 sm:pb-28">
+      <div className="mx-auto max-w-6xl px-4 pt-14 pb-16 sm:px-6 sm:pt-24 sm:pb-28">
         <div className="grid items-start gap-10 lg:grid-cols-[1.05fr_1.25fr] lg:gap-14">
           {/* COLUNA ESQUERDA — pitch editorial */}
           <div className="lg:pt-4">
             <div
-              className="reveal inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)]/25 bg-[var(--color-primary-soft)]/70 px-3 py-1 text-xs text-[var(--color-primary)] shadow-soft backdrop-blur-sm"
+              className="reveal inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)]/25 bg-[var(--color-primary-soft)]/70 px-3 py-1 text-[11px] text-[var(--color-primary)] shadow-soft backdrop-blur-sm sm:text-xs"
               style={{ ["--d" as string]: "0ms" }}
             >
               <Sparkles className="h-3.5 w-3.5" />
@@ -49,19 +49,19 @@ export async function Hero() {
             </div>
 
             <h1
-              className="reveal mt-6 text-balance text-[2.65rem] font-medium leading-[1.02] tracking-[-0.02em] sm:text-[3.25rem] lg:text-[3.85rem]"
-              style={{ ["--d" as string]: "80ms" }}
+              className="reveal mt-6 text-balance font-medium leading-[1.04] tracking-[-0.02em]"
+              style={{
+                ["--d" as string]: "80ms",
+                fontSize: "clamp(2.1rem, 5.5vw + 1rem, 3.85rem)",
+              }}
             >
-              Cada um manda
-              <br />
+              Cada um manda{" "}
               <span className="text-[var(--color-primary)]">no WhatsApp</span>.
-              <br />A plataforma{" "}
+              A plataforma{" "}
               <span className="display-serif italic font-normal text-[1.08em]">
                 centraliza
               </span>{" "}
-              tudo
-              <br />
-              da família.
+              tudo da família.
             </h1>
 
             <p
@@ -305,7 +305,7 @@ function MsgRow({
   tagCategory: string;
 }) {
   return (
-    <li className="card-hover flex items-center gap-2 rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] p-2 pr-3 shadow-soft">
+    <li className="card-hover flex items-center gap-2 rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] p-2 pr-2.5 shadow-soft">
       <div
         aria-hidden
         className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[10px] font-semibold"
@@ -319,21 +319,23 @@ function MsgRow({
       <div className="min-w-0 flex-1">
         <p className="flex items-center gap-1 text-[11px]">
           <span
-            className="font-semibold"
+            className="truncate font-semibold"
             style={{ color: `oklch(45% 0.12 ${hue})` }}
           >
             {name}
           </span>
-          <span className="text-[var(--color-fg-subtle)]">·</span>
-          <span className="text-[var(--color-fg-subtle)]">{time}</span>
-          <CheckCheck className="h-3 w-3 text-[oklch(60%_0.15_220)]" />
+          <span className="hidden text-[var(--color-fg-subtle)] xs:inline">·</span>
+          <span className="hidden text-[var(--color-fg-subtle)] xs:inline">
+            {time}
+          </span>
+          <CheckCheck className="h-3 w-3 shrink-0 text-[oklch(60%_0.15_220)]" />
         </p>
         <p className="truncate text-[12px] leading-tight">{text}</p>
       </div>
       <div className="shrink-0 text-right">
         <p
           className={
-            "num text-xs font-semibold leading-tight " +
+            "num text-[11px] font-semibold leading-tight sm:text-xs " +
             (tagTone === "income"
               ? "text-[var(--color-income)]"
               : "text-[var(--color-expense)]")
@@ -342,7 +344,7 @@ function MsgRow({
           {tagTone === "income" ? "+" : "−"}
           {tagAmount}
         </p>
-        <p className="text-[9px] uppercase tracking-[0.12em] text-[var(--color-fg-subtle)]">
+        <p className="text-[8.5px] uppercase tracking-[0.12em] text-[var(--color-fg-subtle)] sm:text-[9px]">
           IA · {tagCategory}
         </p>
       </div>

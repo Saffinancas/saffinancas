@@ -75,7 +75,7 @@ export function BentoCard({
         </h3>
       )}
       {metric && (
-        <p className="num mt-2 text-2xl font-semibold leading-tight tracking-tight text-[var(--color-fg)] sm:text-3xl">
+        <p className="num mt-2 break-words text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-fg)] sm:text-3xl">
           {metric}
         </p>
       )}

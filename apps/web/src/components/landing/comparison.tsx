@@ -22,6 +22,59 @@ const rows = [
   { f: "Não exige disciplina diária", us: "yes", trad: "no", plan: "no" },
 ] as const;
 
+type Verdict = "yes" | "no" | "partial";
+
+const TAG_TONE: Record<Verdict, string> = {
+  yes: "border-[var(--color-income)]/25 bg-[var(--color-income-soft)] text-[var(--color-income)]",
+  no: "border-[var(--color-expense)]/25 bg-[var(--color-expense-soft)] text-[var(--color-expense)]",
+  partial:
+    "border-[var(--color-warning)]/25 bg-[var(--color-warning-soft)] text-[var(--color-warning)]",
+};
+
+const TAG_TEXT: Record<Verdict, string> = {
+  yes: "sim",
+  no: "não",
+  partial: "parcial",
+};
+
+function MobileTag({
+  label,
+  v,
+  emphasis = false,
+}: {
+  label: string;
+  v: Verdict;
+  emphasis?: boolean;
+}) {
+  return (
+    <div
+      className={
+        "flex flex-col items-center gap-1 rounded-[var(--radius)] border px-2 py-2 text-center transition-colors " +
+        TAG_TONE[v]
+      }
+    >
+      <span
+        className={
+          "text-[9px] font-semibold uppercase tracking-[0.14em] " +
+          (emphasis ? "text-[var(--color-primary)]" : "text-[var(--color-fg-subtle)]")
+        }
+      >
+        {label}
+      </span>
+      <span className="flex items-center gap-1 text-[11px] font-semibold">
+        {v === "yes" ? (
+          <Check className="h-3 w-3" />
+        ) : v === "no" ? (
+          <X className="h-3 w-3" />
+        ) : (
+          <Minus className="h-3 w-3" />
+        )}
+        {TAG_TEXT[v]}
+      </span>
+    </div>
+  );
+}
+
 function Cell({ v }: { v: "yes" | "no" | "partial" }) {
   if (v === "yes")
     return (
@@ -59,17 +112,27 @@ export function Comparison() {
           </p>
         </div>
 
-        <div className="scroll-fade mt-12 overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-soft">
+        {/* Desktop / tablet — tabela completa */}
+        <div className="scroll-fade mt-12 hidden overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-soft md:block">
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead className="sticky top-16 z-10 bg-[var(--color-surface)]/95 backdrop-blur">
               <tr className="border-b border-[var(--color-border)] text-[var(--color-fg-subtle)]">
-                <th className="px-5 py-4 text-[11px] font-semibold uppercase tracking-[0.14em]">Recurso</th>
+                <th className="px-5 py-4 text-[11px] font-semibold uppercase tracking-[0.14em]">
+                  Recurso
+                </th>
                 <th className="relative px-3 py-4 text-center text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-primary)]">
                   Saf Finanças
-                  <span aria-hidden className="pointer-events-none absolute inset-x-3 bottom-0 h-0.5 bg-gradient-to-r from-transparent via-[var(--color-primary)] to-transparent" />
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-3 bottom-0 h-0.5 bg-gradient-to-r from-transparent via-[var(--color-primary)] to-transparent"
+                  />
                 </th>
-                <th className="px-3 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.14em]">Apps tradicionais</th>
-                <th className="px-3 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.14em]">Planilhas</th>
+                <th className="px-3 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.14em]">
+                  Apps tradicionais
+                </th>
+                <th className="px-3 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.14em]">
+                  Planilhas
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -81,7 +144,9 @@ export function Comparison() {
                     (i % 2 === 1 ? "bg-[var(--color-bg-muted)]/60" : "")
                   }
                 >
-                  <td className="px-5 py-3 text-[13.5px] text-[var(--color-fg)]">{r.f}</td>
+                  <td className="px-5 py-3 text-[13.5px] text-[var(--color-fg)]">
+                    {r.f}
+                  </td>
                   <td className="px-3 py-3 text-center">
                     <Cell v={r.us} />
                   </td>
@@ -95,6 +160,29 @@ export function Comparison() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile — cards com badges (evita scroll horizontal apertado) */}
+        <div className="scroll-fade mt-10 space-y-2 md:hidden">
+          {rows.map((r) => (
+            <div
+              key={r.f}
+              className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 shadow-soft"
+            >
+              <p className="text-[13.5px] font-medium leading-snug text-[var(--color-fg)]">
+                {r.f}
+              </p>
+              <div className="mt-2.5 grid grid-cols-3 gap-2">
+                <MobileTag
+                  label="Saf"
+                  v={r.us}
+                  emphasis
+                />
+                <MobileTag label="Apps" v={r.trad} />
+                <MobileTag label="Planilha" v={r.plan} />
+              </div>
+            </div>
+          ))}
         </div>
 
         <p className="mt-6 text-xs text-[var(--color-fg-subtle)]">

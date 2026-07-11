@@ -65,6 +65,10 @@
   --duration-fast: 150ms;
   --duration: 220ms;
   --duration-slow: 360ms;
+
+  /* breakpoint extra pra "phones grandes" (iPhone Pro Max, S24 Ultra) —
+     evita apertar 2 cols em phones pequenos (<376px = iPhone SE) */
+  --breakpoint-xs: 26rem;
 }
 
 /* ------------------------------------------------------------------------
@@ -125,6 +129,9 @@
     color-scheme: light dark;
     scroll-behavior: smooth;
     scroll-padding-top: 5rem;
+    /* trava scroll horizontal — safety net contra qualquer child que
+       overflow acidentalmente em mobile (ex: tabelas, imagens, gradientes) */
+    overflow-x: clip;
   }
 
   body {
@@ -132,6 +139,16 @@
     color: var(--color-fg);
     min-height: 100dvh;
     font-feature-settings: "ss01", "cv11";
+    overflow-x: clip;
+  }
+
+  /* mobile — evita "scroll horizontal fantasma" quando um flex/grid child
+     cresce por causa de conteúdo longo (número R$, e-mail, url) */
+  main,
+  section,
+  header,
+  footer {
+    min-width: 0;
   }
 
   /* dinheiro sempre em tabular-nums */

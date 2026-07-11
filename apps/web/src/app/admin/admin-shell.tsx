@@ -154,7 +154,7 @@ export function AdminShell({ user, children }: Props) {
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 md:grid-cols-[220px_1fr]">
+      <div className="mx-auto grid max-w-7xl gap-6 px-3 py-8 sm:px-6 md:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="hidden md:block">
           <nav aria-label="Admin navigation" className="sticky top-20 flex flex-col gap-0.5">
             {nav.map((item) => {
@@ -189,7 +189,7 @@ export function AdminShell({ user, children }: Props) {
             })}
           </nav>
         </aside>
-        <main>{children}</main>
+        <main className="min-w-0">{children}</main>
       </div>
     </div>
   );

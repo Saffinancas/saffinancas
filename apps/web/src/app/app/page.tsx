@@ -199,7 +199,7 @@ export default async function DashboardPage() {
       />
 
       {/* Bento grid de KPIs + dataviz */}
-      <div className="grid auto-rows-[minmax(120px,_auto)] grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <div className="grid auto-rows-[minmax(110px,_auto)] grid-cols-1 gap-3 xs:grid-cols-2 sm:gap-4 lg:grid-cols-4">
         {/* Saldo do mês — span 2 colunas + 2 linhas */}
         <BentoCard
           span="col-span-2 lg:row-span-2"

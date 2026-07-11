@@ -72,7 +72,7 @@ export function AppShell({ user, family, trialState, children }: Props) {
   }
 
   return (
-    <div className="min-h-dvh bg-[var(--color-bg)] pb-20 md:pb-0">
+    <div className="min-h-dvh bg-[var(--color-bg)] pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
       <header className="sticky top-0 z-30 border-b border-[var(--color-border)] bg-[var(--color-bg)]/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-2">
@@ -168,7 +168,7 @@ export function AppShell({ user, family, trialState, children }: Props) {
 
       <TrialBanner state={trialState} />
 
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 md:grid-cols-[220px_1fr]">
+      <div className="mx-auto grid max-w-7xl gap-6 px-3 py-6 sm:px-6 md:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="hidden md:block">
           <nav aria-label="App navigation" className="sticky top-20 flex flex-col gap-0.5">
             {nav.map((item) => {
@@ -210,13 +210,13 @@ export function AppShell({ user, family, trialState, children }: Props) {
           </nav>
         </aside>
 
-        <main>{children}</main>
+        <main className="min-w-0">{children}</main>
       </div>
 
-      {/* Bottom nav mobile — acesso rápido aos 5 mais usados; o drawer cobre todos */}
+      {/* Bottom nav mobile — 5 items com labels compactos + safe-area iOS */}
       <nav
         aria-label="App navigation mobile"
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[var(--color-border)] bg-[var(--color-bg)]/95 backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[var(--color-border)] bg-[var(--color-bg)]/95 pb-[max(env(safe-area-inset-bottom),0px)] backdrop-blur md:hidden"
       >
         {nav.slice(0, 5).map((item) => {
           const active = pathname === item.href;
@@ -225,7 +225,7 @@ export function AppShell({ user, family, trialState, children }: Props) {
               key={item.href}
               href={item.href}
               className={cn(
-                "relative flex flex-col items-center gap-0.5 py-2.5 text-[10px] transition-colors duration-200",
+                "relative flex flex-col items-center gap-1 px-1 py-2.5 text-center text-[9.5px] leading-tight transition-colors duration-200",
                 active
                   ? "text-[var(--color-primary)]"
                   : "text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]",
@@ -237,8 +237,8 @@ export function AppShell({ user, family, trialState, children }: Props) {
                   className="absolute top-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-[var(--color-primary)]"
                 />
               )}
-              <item.icon className="h-4 w-4" />
-              {item.label}
+              <item.icon className="h-[18px] w-[18px] shrink-0" />
+              <span className="line-clamp-1">{item.label}</span>
             </Link>
           );
         })}

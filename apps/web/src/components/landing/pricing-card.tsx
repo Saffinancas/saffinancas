@@ -107,8 +107,8 @@ export function PricingCard({
               </span>
             </div>
 
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="display-serif num text-6xl tracking-tight text-[var(--color-fg)]">
+            <div className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-0">
+              <span className="display-serif num text-[3.25rem] tracking-tight text-[var(--color-fg)] sm:text-6xl">
                 R$ {displayValue}
               </span>
               <span className="text-sm text-[var(--color-fg-muted)]">/mês</span>
