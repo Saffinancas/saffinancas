@@ -1,37 +1,36 @@
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
 import { BRAND } from "@/lib/brand";
+import { getFooter } from "@/lib/site-content";
+import { isInternalHref, type FooterLink } from "@/lib/site-footer";
 
-const cols = [
-  {
-    title: "Produto",
-    links: [
-      { href: "#como-funciona", label: "Como funciona" },
-      { href: "#diferenciais", label: "Diferenciais" },
-      { href: "#precos", label: "Preço" },
-      { href: "/status", label: "Status" },
-    ],
-  },
-  {
-    title: "Empresa",
-    links: [
-      { href: "/blog", label: "Blog" },
-      { href: "/contato", label: "Contato" },
-      { href: "/imprensa", label: "Imprensa" },
-    ],
-  },
-  {
-    title: "Legal",
-    links: [
-      { href: "/termos", label: "Termos de uso" },
-      { href: "/privacidade", label: "Privacidade" },
-      { href: "/lgpd", label: "LGPD" },
-      { href: "/cookies", label: "Cookies" },
-    ],
-  },
-];
+function FooterNavLink({ link }: { link: FooterLink }) {
+  const className =
+    "link-underline text-sm text-[var(--color-fg-muted)] transition-colors duration-200 hover:text-[var(--color-fg)]";
 
-export function Footer() {
+  if (isInternalHref(link.href)) {
+    return (
+      <Link href={link.href} className={className}>
+        {link.label}
+      </Link>
+    );
+  }
+
+  const isWeb = link.href.startsWith("http");
+  return (
+    <a
+      href={link.href}
+      className={className}
+      {...(isWeb ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+    >
+      {link.label}
+    </a>
+  );
+}
+
+export async function Footer() {
+  const { columns } = await getFooter();
+
   return (
     <footer className="relative overflow-hidden border-t border-[var(--color-border)] bg-[var(--color-bg-muted)]">
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-grain" />
@@ -54,20 +53,15 @@ export function Footer() {
             </p>
           </div>
 
-          {cols.map((c) => (
+          {columns.map((c) => (
             <nav key={c.title} aria-label={c.title}>
               <p className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[var(--color-fg-subtle)]">
                 {c.title}
               </p>
               <ul className="mt-4 space-y-2.5">
                 {c.links.map((l) => (
-                  <li key={l.href}>
-                    <Link
-                      href={l.href}
-                      className="link-underline text-sm text-[var(--color-fg-muted)] transition-colors duration-200 hover:text-[var(--color-fg)]"
-                    >
-                      {l.label}
-                    </Link>
+                  <li key={`${l.label}-${l.href}`}>
+                    <FooterNavLink link={l} />
                   </li>
                 ))}
               </ul>

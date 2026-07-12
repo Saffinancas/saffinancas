@@ -12,6 +12,7 @@ import {
   Shield,
   BrainCircuit,
   MessageSquare,
+  LayoutTemplate,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/brand-mark";
@@ -38,6 +39,7 @@ const nav = [
   { href: "/admin/cobranca", label: "Cobrança", icon: Receipt },
   { href: "/admin/uso-ia", label: "Uso de IA", icon: BrainCircuit },
   { href: "/admin/integracoes/whatsapp", label: "WhatsApp", icon: MessageSquare },
+  { href: "/admin/site", label: "Conteúdo do site", icon: LayoutTemplate },
   { href: "/admin/auditoria", label: "Auditoria", icon: Shield },
   { href: "/admin/config", label: "Configurações", icon: Settings },
 ];
