@@ -41,8 +41,17 @@ export async function sendPasswordResetEmail(opts: ResetEmailOpts): Promise<void
     (await getPlatformSetting("email.from")) ?? `${BRAND.name} <${BRAND.email.noReply}>`;
 
   if (!apiKey) {
-    console.log(
-      `[auth-email][sim] Reset password → ${opts.to}\n  URL: ${opts.resetUrl}`,
+    // FAIL-CLOSED em produção: se o provedor de email não está configurado,
+    // NUNCA vazar o link de reset no log (Vercel logs são exportáveis e
+    // qualquer pessoa com acesso operacional poderia assumir contas).
+    // Fail loud pra o admin ver e configurar a chave.
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "email.resend_api_key ausente em produção — reset de senha bloqueado. Configure em /admin/config.",
+      );
+    }
+    console.warn(
+      `[auth-email][DEV] reset password destino=${opts.to} — provedor não configurado`,
     );
     return;
   }

@@ -82,7 +82,11 @@ export default async function NotaDetailPage({
                 </a>
               </Button>
               <Button asChild variant="secondary" size="sm">
-                <a href={`/api/fiscal/invoices/${invoice.id}/danfe`} target="_blank">
+                <a
+                  href={`/api/fiscal/invoices/${invoice.id}/danfe`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <FileText className="h-4 w-4" /> DANFE
                 </a>
               </Button>

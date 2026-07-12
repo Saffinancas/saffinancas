@@ -4,8 +4,14 @@
  * direto — navegador imprime em PDF com Ctrl+P sem perder fidelidade.
  *
  * Layout inspirado no DANFE oficial ABRASF, mas adaptado pra impressão A4.
+ *
+ * SEGURANÇA: TODO campo controlado pelo usuário (razão social, endereço,
+ * descrição, e-mail) DEVE passar por escapeHtml() antes de virar HTML.
+ * Sem isso, um membro da família pode injetar <script> na descrição da
+ * NFSe e executar código na sessão de outro membro que abrir o DANFE.
  */
 import type { NfseInvoice, FiscalProfile, NfseRecipient } from "@cofre/db";
+import { escapeHtml } from "@/lib/html-escape";
 
 function fmt(cents: number): string {
   return (cents / 100).toLocaleString("pt-BR", {
@@ -38,11 +44,16 @@ export function buildDanfeHtml(opts: {
   const provAddress = (profile.address as Record<string, string>) ?? {};
   const recAddress = (recipient?.address as Record<string, string>) ?? {};
 
+  // Todos os campos controláveis pelo usuário são escapados aqui. Números
+  // e datas (formatados via toLocaleString/fmt) não passam por escape
+  // porque são sempre gerados server-side a partir de tipos numéricos.
+  const e = escapeHtml;
+
   return `<!doctype html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8" />
-<title>DANFE NFSe ${invoice.nfseNumber ?? invoice.rpsNumber}</title>
+<title>DANFE NFSe ${e(invoice.nfseNumber ?? invoice.rpsNumber)}</title>
 <style>
   @page { size: A4; margin: 12mm; }
   * { box-sizing: border-box; }
@@ -73,20 +84,20 @@ export function buildDanfeHtml(opts: {
 
   <div class="header">
     <div>
-      <h1>${profile.legalName}</h1>
-      <div>${profile.documentType === "PJ" ? "CNPJ" : "CPF"}: ${fmtDoc(profile.documentNumber, profile.documentType)}</div>
-      ${profile.municipalInscription ? `<div>IM: ${profile.municipalInscription}</div>` : ""}
-      <div>${provAddress.street ?? ""}, ${provAddress.number ?? ""} ${
-        provAddress.complement ? "— " + provAddress.complement : ""
+      <h1>${e(profile.legalName)}</h1>
+      <div>${profile.documentType === "PJ" ? "CNPJ" : "CPF"}: ${e(fmtDoc(profile.documentNumber, profile.documentType))}</div>
+      ${profile.municipalInscription ? `<div>IM: ${e(profile.municipalInscription)}</div>` : ""}
+      <div>${e(provAddress.street ?? "")}, ${e(provAddress.number ?? "")} ${
+        provAddress.complement ? "— " + e(provAddress.complement) : ""
       }</div>
-      <div>${provAddress.district ?? ""} — ${profile.cityName}/${profile.stateCode} — CEP ${provAddress.zipCode ?? ""}</div>
+      <div>${e(provAddress.district ?? "")} — ${e(profile.cityName)}/${e(profile.stateCode)} — CEP ${e(provAddress.zipCode ?? "")}</div>
     </div>
     <div class="meta">
-      <div><strong>NFS-e Nº ${invoice.nfseNumber ?? "(pendente)"}</strong></div>
-      <div>${profile.cityName.toUpperCase()}</div>
+      <div><strong>NFS-e Nº ${e(invoice.nfseNumber ?? "(pendente)")}</strong></div>
+      <div>${e(profile.cityName.toUpperCase())}</div>
       <div>Emitida em ${invoice.issuedAt ? new Date(invoice.issuedAt).toLocaleString("pt-BR") : "—"}</div>
-      ${invoice.verificationCode ? `<div>Verificação: <span class="verification">${invoice.verificationCode}</span></div>` : ""}
-      <div style="margin-top:4px">RPS ${invoice.rpsSerie} ${invoice.rpsNumber}</div>
+      ${invoice.verificationCode ? `<div>Verificação: <span class="verification">${e(invoice.verificationCode)}</span></div>` : ""}
+      <div style="margin-top:4px">RPS ${e(invoice.rpsSerie)} ${e(invoice.rpsNumber)}</div>
     </div>
   </div>
 
@@ -96,10 +107,10 @@ export function buildDanfeHtml(opts: {
       recipient
         ? `
     <div class="grid">
-      <div class="field"><div class="label">Razão social</div><div class="value">${recipient.name}</div></div>
-      <div class="field"><div class="label">${recipient.documentType === "PJ" ? "CNPJ" : "CPF"}</div><div class="value">${fmtDoc(recipient.documentNumber, recipient.documentType)}</div></div>
-      <div class="field" style="grid-column:1/-1"><div class="label">Endereço</div><div class="value">${recAddress.street ?? "—"}, ${recAddress.number ?? ""} — ${recAddress.district ?? ""} — ${recAddress.cityName ?? ""}/${recAddress.stateCode ?? ""}</div></div>
-      ${recipient.email ? `<div class="field" style="grid-column:1/-1"><div class="label">E-mail</div><div class="value">${recipient.email}</div></div>` : ""}
+      <div class="field"><div class="label">Razão social</div><div class="value">${e(recipient.name)}</div></div>
+      <div class="field"><div class="label">${recipient.documentType === "PJ" ? "CNPJ" : "CPF"}</div><div class="value">${e(fmtDoc(recipient.documentNumber, recipient.documentType))}</div></div>
+      <div class="field" style="grid-column:1/-1"><div class="label">Endereço</div><div class="value">${e(recAddress.street ?? "—")}, ${e(recAddress.number ?? "")} — ${e(recAddress.district ?? "")} — ${e(recAddress.cityName ?? "")}/${e(recAddress.stateCode ?? "")}</div></div>
+      ${recipient.email ? `<div class="field" style="grid-column:1/-1"><div class="label">E-mail</div><div class="value">${e(recipient.email)}</div></div>` : ""}
     </div>`
         : "<div>—</div>"
     }
@@ -107,11 +118,11 @@ export function buildDanfeHtml(opts: {
 
   <div class="section">
     <h2>Discriminação do Serviço</h2>
-    <div class="desc">${invoice.serviceDescription}</div>
+    <div class="desc">${e(invoice.serviceDescription)}</div>
     <div class="grid" style="margin-top:6px">
-      <div class="field"><div class="label">Item LC 116</div><div class="value">${invoice.serviceCode}</div></div>
-      ${invoice.cnae ? `<div class="field"><div class="label">CNAE</div><div class="value">${invoice.cnae}</div></div>` : ""}
-      <div class="field"><div class="label">Município da prestação</div><div class="value">${profile.cityName} (${profile.cityCode})</div></div>
+      <div class="field"><div class="label">Item LC 116</div><div class="value">${e(invoice.serviceCode)}</div></div>
+      ${invoice.cnae ? `<div class="field"><div class="label">CNAE</div><div class="value">${e(invoice.cnae)}</div></div>` : ""}
+      <div class="field"><div class="label">Município da prestação</div><div class="value">${e(profile.cityName)} (${e(profile.cityCode)})</div></div>
       <div class="field"><div class="label">Competência</div><div class="value">${new Date(invoice.competenceDate).toLocaleDateString("pt-BR")}</div></div>
     </div>
   </div>

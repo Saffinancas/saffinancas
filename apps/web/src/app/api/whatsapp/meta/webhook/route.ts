@@ -23,7 +23,15 @@ export async function GET(req: Request): Promise<Response> {
     return new NextResponse("forbidden", { status: 403 });
   }
   const expected = await getPlatformSetting("whatsapp.meta.verify_token");
-  if (!expected || token !== expected) {
+  if (!expected || !token) {
+    return new NextResponse("forbidden", { status: 403 });
+  }
+  // Comparação em tempo constante (consistente com o HMAC do POST).
+  // Sem isso, a comparação `!==` do JS termina no primeiro byte diferente
+  // e um atacante paciente pode inferir o verify_token por timing.
+  const a = Buffer.from(token);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
     return new NextResponse("forbidden", { status: 403 });
   }
   return new NextResponse(challenge ?? "", { status: 200 });

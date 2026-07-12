@@ -72,6 +72,24 @@ export async function updateAssetCurrentValue(opts: {
 }) {
   if (opts.valueCents < 0) throw new Error("Valor inválido.");
   const familyId = await requireFamily();
+
+  // SEGURANÇA: valida posse ANTES de qualquer INSERT — se pulasse essa
+  // checagem, o INSERT em patrimonyValuations aceitaria assetId de outra
+  // família (o valuation ainda seria armarrado ao familyId do atacante,
+  // mas apareceria no histórico da vítima porque getAssetWithHistory
+  // filtra só por assetId).
+  const [owned] = await db
+    .select({ id: schema.patrimonyAssets.id })
+    .from(schema.patrimonyAssets)
+    .where(
+      and(
+        eq(schema.patrimonyAssets.id, opts.assetId),
+        eq(schema.patrimonyAssets.familyId, familyId),
+      ),
+    )
+    .limit(1);
+  if (!owned) throw new Error("Ativo não encontrado.");
+
   const now = new Date();
   await db.insert(schema.patrimonyValuations).values({
     id: id("val"),

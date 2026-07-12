@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, isNull, desc } from "drizzle-orm";
+import { and, eq, isNull, desc, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { db, schema } from "@cofre/db";
@@ -104,20 +104,20 @@ export async function depositToGoal(
 ): Promise<{ ok: true; newSavedCents: number } | { ok: false; error: string }> {
   try {
     const fid = await familyId();
-    const [g] = await db
-      .select({ savedCents: schema.goals.savedCents })
-      .from(schema.goals)
-      .where(and(eq(schema.goals.id, goalId), eq(schema.goals.familyId, fid)))
-      .limit(1);
-    if (!g) return { ok: false, error: "Meta não encontrada." };
-
-    const newSaved = Number(g.savedCents) + amountCents;
-    await db
+    // UPDATE atômico via expressão SQL — evita lost update quando dois
+    // depósitos concorrentes (double-click, app + WhatsApp) rodam ao
+    // mesmo tempo. O WHERE já garante posse + isolamento por família.
+    const rows = await db
       .update(schema.goals)
-      .set({ savedCents: newSaved, updatedAt: new Date() })
-      .where(eq(schema.goals.id, goalId));
+      .set({
+        savedCents: sql`${schema.goals.savedCents} + ${amountCents}`,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(schema.goals.id, goalId), eq(schema.goals.familyId, fid)))
+      .returning({ savedCents: schema.goals.savedCents });
+    if (rows.length === 0) return { ok: false, error: "Meta não encontrada." };
     revalidatePath("/app/metas");
-    return { ok: true, newSavedCents: newSaved };
+    return { ok: true, newSavedCents: Number(rows[0]!.savedCents) };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Erro" };
   }
