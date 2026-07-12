@@ -31,10 +31,17 @@ export type Pricing = {
 };
 
 export async function getPricing(): Promise<Pricing> {
-  const [rawMonthly, rawDiscount] = await Promise.all([
-    getPlatformSetting("pricing.monthly_cents"),
-    getPlatformSetting("pricing.annual_discount_pct"),
-  ]);
+  let rawMonthly: string | null = null;
+  let rawDiscount: string | null = null;
+  try {
+    [rawMonthly, rawDiscount] = await Promise.all([
+      getPlatformSetting("pricing.monthly_cents"),
+      getPlatformSetting("pricing.annual_discount_pct"),
+    ]);
+  } catch {
+    // Banco indisponível (ex.: durante prerender do build): usa fallback do BRAND.
+    // Nunca deixar o preço derrubar a renderização de páginas estáticas.
+  }
 
   const monthlyCents =
     parsePositiveInt(rawMonthly) ?? Math.round(BRAND.pricing.monthlyBRL * 100);

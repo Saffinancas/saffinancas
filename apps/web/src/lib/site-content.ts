@@ -16,11 +16,13 @@ import {
 } from "@/lib/site-footer";
 
 export async function getFooter(): Promise<FooterConfig> {
-  const raw = await getPlatformSetting(FOOTER_SETTING_KEY);
-  if (!raw) return DEFAULT_FOOTER;
   try {
+    const raw = await getPlatformSetting(FOOTER_SETTING_KEY);
+    if (!raw) return DEFAULT_FOOTER;
     return normalizeFooter(JSON.parse(raw));
   } catch {
+    // Banco indisponível (ex.: durante prerender do build) ou JSON inválido:
+    // o rodapé NUNCA pode derrubar a renderização — cai no default.
     return DEFAULT_FOOTER;
   }
 }
